@@ -21,7 +21,7 @@ function newLocalPart() {
     if (p) {
         return hyphenConcatChoices(adjective, noun)
     }
-    else if (q) {
+    if (q) {
         return hyphenConcatChoices(gerunding, noun)
     }
     return hyphenConcatChoices(gerunding, adverbly)
