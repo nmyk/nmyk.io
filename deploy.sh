@@ -2,7 +2,6 @@
 
 set -e
 
-SPACES_HOST=nyc3.digitaloceanspaces.com
 CDN_ASSETS_PATH=s3://nmyk/assets/
 NMYKIO_NGINX_ROOT=/var/www/html/
 
