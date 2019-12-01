@@ -5,19 +5,26 @@ function chooseOne(arr) {
     return arr[i];
 }
 
+function hyphenConcatChoices(first, second) {
+    return [chooseOne(first), chooseOne(second)].join('-')
+}
+
 function newLocalPart() {
     var noun = words['nouns'];
     var adjective = words['adjectives'];
     var adverbly = words['adverbs'];
     var gerunding = words['gerunds'];
-    choices = [
-        [chooseOne(gerunding), chooseOne(noun)].join('-'),
-        [chooseOne(gerunding), chooseOne(adverbly)].join('-'),
-        [chooseOne(adjective), chooseOne(noun)].join('-'),
-        // Double the chance of getting adj-noun because it's the most satisfying.
-        [chooseOne(adjective), chooseOne(noun)].join('-')
-    ];
-    return chooseOne(choices);
+    // 50% - adjective-noun
+    // 25% - gerunding-noun
+    // 25% - gerunding-adverbly
+    var p = chooseOne([1, 0]), q = chooseOne([1, 0]);
+    if (p) {
+        return hyphenConcatChoices(adjective, noun)
+    }
+    else if (q) {
+        return hyphenConcatChoices(gerunding, noun)
+    }
+    return hyphenConcatChoices(gerunding, adverbly)
 }
 
 function setEmailAddress() {
