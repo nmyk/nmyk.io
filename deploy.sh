@@ -3,7 +3,7 @@
 set -e
 
 CDN_ASSETS_PATH=s3://nmyk/assets/
-NMYKIO_NGINX_ROOT=/var/www/html/
+NGINX_ROOT=/var/www/html/
 
 upload_to_spaces() {
 	for file in "$@"; do
@@ -13,5 +13,5 @@ upload_to_spaces() {
 }
 
 upload_to_spaces assets/*
-scp index.html root@nmyk.io:$NMYKIO_NGINX_ROOT
+scp index.html root@nmyk.io:$NGINX_ROOT
 echo "Done"
