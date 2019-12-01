@@ -17,10 +17,11 @@ function newLocalPart() {
     // 50% - adjective-noun
     // 25% - gerunding-noun
     // 25% - gerunding-adverbly
-    var p = chooseOne([1, 0]), q = chooseOne([1, 0]);
+    var p = chooseOne([1, 0]);
     if (p) {
         return hyphenConcatChoices(adjective, noun);
     }
+    var q = chooseOne([1, 0]);
     if (q) {
         return hyphenConcatChoices(gerunding, noun);
     }
