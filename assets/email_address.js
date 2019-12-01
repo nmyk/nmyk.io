@@ -6,7 +6,7 @@ function chooseOne(arr) {
 }
 
 function hyphenConcatChoices(first, second) {
-    return [chooseOne(first), chooseOne(second)].join('-')
+    return [chooseOne(first), chooseOne(second)].join('-');
 }
 
 function newLocalPart() {
@@ -19,12 +19,12 @@ function newLocalPart() {
     // 25% - gerunding-adverbly
     var p = chooseOne([1, 0]), q = chooseOne([1, 0]);
     if (p) {
-        return hyphenConcatChoices(adjective, noun)
+        return hyphenConcatChoices(adjective, noun);
     }
     if (q) {
-        return hyphenConcatChoices(gerunding, noun)
+        return hyphenConcatChoices(gerunding, noun);
     }
-    return hyphenConcatChoices(gerunding, adverbly)
+    return hyphenConcatChoices(gerunding, adverbly);
 }
 
 function setEmailAddress() {
