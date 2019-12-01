@@ -16,7 +16,8 @@ function newLocalPart() {
     choices = [
         [chooseOne(ger), chooseOne(n)].join('-'),
         [chooseOne(ger), chooseOne(adv)].join('-'),
-        [chooseOne(adj), chooseOne(n)].join('-'), // greater chance of adj-noun because it's the most satisfying
+        [chooseOne(adj), chooseOne(n)].join('-'),
+        // Double the chance of getting adj-noun because it's the most satisfying.
         [chooseOne(adj), chooseOne(n)].join('-')
     ];
     return chooseOne(choices);
