@@ -1,12 +1,6 @@
-:root {
-    --bg-color: #282828;
-    --main-text-color: #e8dbb6;
-    --link-text-color: #c9899a;
-}
-
 body {
-    background-color: var(--bg-color);
-    color: var(--main-text-color);
+    background-color: #282828;
+    color: #e8dbb6;
 }
 
 * {
@@ -17,7 +11,7 @@ body {
 
 .container {
     background-color: #303030;
-    border: 1px solid var(--main-text-color);
+    border: 1px solid #e8dbb6;
     display: inline-block;
     padding: 10px;
     border-radius: 3px;
@@ -31,12 +25,12 @@ hr {
 }
 
 a {
-    color: var(--link-text-color);
+    color: #c9899a;
     text-decoration: none;
 }
 
 a:hover {
-    color: var(--link-text-color);
+    color: #c9899a;
     text-decoration: underline;
 }
 
