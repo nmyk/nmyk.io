@@ -1,0 +1,53 @@
+#!/usr/local/bin/python3.6
+import json
+import os
+import subprocess
+import sys
+
+import boto3
+
+SPACES_REGION='nyc3'
+SPACES_BUCKET='nmyk'
+NGINX_ROOT='/var/www/html'
+
+content_types = {
+    '.css': 'text/css',
+    '.js': 'text/javascript'
+}
+
+def get_spaces_client(secrets):
+    spaces = boto3.client(
+        's3',
+        region_name=SPACES_REGION,
+        endpoint_url=f'https://{SPACES_REGION}.digitaloceanspaces.com',
+        aws_access_key_id=secrets['SPACES_KEY'],
+        aws_secret_access_key=secrets['SPACES_SECRET']
+    )
+    return spaces
+
+def main():
+    with open('secrets.json') as secrets_file:
+        secrets = json.load(secrets_file)
+    spaces = get_spaces_client(secrets)
+    for asset in os.listdir('assets'):
+        path = f'assets/{asset}'
+        _, file_ext = os.path.splitext(path)
+        with open(path, 'rb') as asset_file:
+            resp = spaces.put_object(
+                Bucket=SPACES_BUCKET,
+                Key=path,
+                Body=asset_file,
+                ContentType=content_types.get(file_ext, 'binary/octet-stream'),
+                ACL='public-read'
+            )
+            if not resp['ResponseMetadata']['HTTPStatusCode'] == 200:
+                print(f'Could not upload to spaces: {asset}', resp)
+                sys.exit(1)
+        print(f'❯ {asset}')
+    subprocess.run(['scp', '-q', 'index.html', f'root@nmyk.io:{NGINX_ROOT}'])
+    print('❯ index.html')
+    print('Done')
+
+
+if __name__ == '__main__':
+    main()
