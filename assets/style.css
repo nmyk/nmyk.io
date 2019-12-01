@@ -1,6 +1,12 @@
+:root {
+    --bg-color: #282828;
+    --main-text-color: #e8dbb6;
+    --link-text-color: #c9899a;
+}
+
 body {
-    background-color: #282828;
-    color: #e8dbb6;
+    background-color: var(--bg-color);
+    color: var(--main-text-color);
 }
 
 * {
@@ -11,7 +17,7 @@ body {
 
 .container {
     background-color: #303030;
-    border: 1px solid #e8dbb6;
+    border: 1px solid var(--main-text-color);
     display: inline-block;
     padding: 10px;
     border-radius: 3px;
@@ -25,12 +31,12 @@ hr {
 }
 
 a {
-    color: #c9899a;
+    color: var(--link-text-color);
     text-decoration: none;
 }
 
 a:hover {
-    color: #c9899a;
+    color: var(--link-text-color);
     text-decoration: underline;
 }
 
