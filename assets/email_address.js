@@ -14,17 +14,8 @@ function newLocalPart() {
     var adjective = words['adjectives'];
     var adverbly = words['adverbs'];
     var gerunding = words['gerunds'];
-    // 50% - adjective-noun
-    // 25% - gerunding-noun
-    // 25% - gerunding-adverbly
-    var p = chooseOne([1, 0]);
-    if (p) {
-        return hyphenConcatChoices(adjective, noun);
-    }
-    var q = chooseOne([1, 0]);
-    if (q) {
-        return hyphenConcatChoices(gerunding, noun);
-    }
+    if (chooseOne([0, 1])) { return hyphenConcatChoices(adjective, noun); }
+    if (chooseOne([0, 1])) { return hyphenConcatChoices(gerunding, noun); }
     return hyphenConcatChoices(gerunding, adverbly);
 }
 
