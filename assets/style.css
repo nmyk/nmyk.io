@@ -15,9 +15,9 @@ body {
     font-family: 'Inconsolata', monospace;
 }
 
-div.vspace200px {
+div.vspace100px {
     clear: both;
-    height: 200px;
+    height: 100px;
 }
 
 .container {
