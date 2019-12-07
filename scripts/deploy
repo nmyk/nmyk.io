@@ -28,7 +28,7 @@ spaces = boto3.client(
 
 
 def upload(asset):
-    path = f'assets/{asset}'
+    path = f'web/assets/{asset}'
     _, file_ext = os.path.splitext(path)
     with open(path, 'rb') as asset_file:
         resp = spaces.put_object(
@@ -44,14 +44,24 @@ def upload(asset):
     print(f'❯ {asset}')
 
 
-def main():
-    for asset in os.listdir('assets'):
-        upload(asset)
-    scp_cmd = f'scp -q index.html root@nmyk.io:{NGINX_ROOT}'.split()
-    if subprocess.run(scp_cmd).returncode:
-        print('Could not upload to host: index.html')
+def restart_app():
+    cmd = 'ssh root@nmyk.io /bin/bash'.split()
+    heredoc = ("<<-'ENDSSH'\n"
+               "cd nmyk.io\n"
+               "git checkout -- . && git pull\n"
+               "docker-compose down && docker-compose up -d\n"
+               "ENDSSH")
+    cmd.append(heredoc)
+    if subprocess.run(cmd).returncode:
+        print('Could not restart app')
         sys.exit(1)
-    print('❯ index.html')
+    print('❯ https://nmyk.io')
+
+
+def main():
+    for asset in os.listdir('web/assets'):
+        upload(asset)
+    restart_app()
     print('Done')
 
 
