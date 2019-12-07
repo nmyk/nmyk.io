@@ -8,7 +8,6 @@ import boto3
 
 SPACES_REGION='nyc3'
 SPACES_BUCKET='nmyk'
-NGINX_ROOT='/var/www/html'
 
 content_types = {
     '.css': 'text/css',
