@@ -32,7 +32,7 @@ def upload(asset):
     with open(path, 'rb') as asset_file:
         resp = spaces.put_object(
             Bucket=SPACES_BUCKET,
-            Key=path,
+            Key=f'assets/{asset}',
             Body=asset_file,
             ContentType=content_types.get(file_ext, 'binary/octet-stream'),
             ACL='public-read'
