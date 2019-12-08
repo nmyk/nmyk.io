@@ -11,7 +11,7 @@ deploy:
 .PHONY: develop
 develop:
 	docker-compose -f $(COMPOSE_FILE) \
-		run --rm -d \
+		run -d \
 		--volume $(shell pwd):/app \
 		--publish 8080:8080 \
 		--name app-dev \
