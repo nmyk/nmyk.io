@@ -6,8 +6,8 @@ import sys
 
 import boto3
 
-SPACES_REGION='nyc3'
-SPACES_BUCKET='nmyk'
+SPACES_REGION= 'nyc3'
+SPACES_BUCKET= 'nmyk'
 COMPOSE_FILE = 'deployment/docker-compose.yml'
 
 content_types = {
