@@ -1,10 +1,5 @@
-FROM debian:testing
+FROM golang:alpine
 LABEL maintainer="Nick Mykins <nick@nmyk.io>"
-
-RUN apt update && apt install \
-    golang \
-    build-essential \
-    -y
 
 WORKDIR /app
 ADD pkg ./
