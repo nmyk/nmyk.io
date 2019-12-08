@@ -48,7 +48,7 @@ def restart_app():
     heredoc = ("<<-'ENDSSH'\n"
                "cd nmyk.io\n"
                "git checkout -- . && git pull\n"
-               "docker-compose down && docker-compose up --build -d\n"
+               "docker-compose down && docker-compose up -f deployment/docker-compose.yml --build -d\n"
                "ENDSSH")
     cmd.append(heredoc)
     if subprocess.run(cmd).returncode:
