@@ -1,9 +1,10 @@
 version: '3'
 services:
+
   nginx:
     image: nginx:1.16.1-alpine
     depends_on:
-      - nmyk
+      - app
     ports:
       - "80:80"
       - "443:443"
@@ -13,6 +14,7 @@ services:
       - ../data/certbot/www:/var/www/certbot
     command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
     restart: unless-stopped
+
   certbot:
     image: certbot/certbot
     volumes:
@@ -20,8 +22,9 @@ services:
       - ../data/certbot/www:/var/www/certbot
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     restart: unless-stopped
-  nmyk:
+
+  app:
     build:
       context: ../
-      dockerfile: ./deployment/nmyk.Dockerfile
+      dockerfile: ./deployment/app.Dockerfile
     restart: always

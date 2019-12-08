@@ -7,10 +7,10 @@ RUN apt update && apt install \
     -y
 
 WORKDIR /app
-COPY main.go ./
+ADD pkg ./
 COPY web/index.html ./web/
 
 RUN mkdir /build
-RUN go build -v -o /build/nmyk
+RUN go build -v -o /build/app
 
-ENTRYPOINT ["/build/nmyk"]
+ENTRYPOINT ["/build/app"]
