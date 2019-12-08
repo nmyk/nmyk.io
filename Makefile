@@ -10,6 +10,7 @@ deploy:
 
 .PHONY: develop
 develop:
+	docker-compose -f $(COMPOSE_FILE) build app
 	docker-compose -f $(COMPOSE_FILE) \
 		run -d \
 		--volume $(shell pwd):/app \
