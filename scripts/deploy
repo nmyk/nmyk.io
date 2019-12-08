@@ -48,8 +48,8 @@ def restart_app():
     cmd = 'ssh root@nmyk.io /bin/bash'.split()
     heredoc = ("<<-'ENDSSH'\n"
                "cd nmyk.io\n"
+               f"docker-compose -f {COMPOSE_FILE} down --remove-orphans \n"
                "git checkout -- . && git pull\n"
-               f"docker-compose -f {COMPOSE_FILE} down --remove-orphans && "
                f"docker-compose -f {COMPOSE_FILE} up --build -d\n"
                "ENDSSH")
     cmd.append(heredoc)
