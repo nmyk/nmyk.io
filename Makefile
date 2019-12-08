@@ -2,11 +2,11 @@ COMPOSE_FILE=deployment/docker-compose.yml
 
 .PHONY: init
 init:
-	./scripts/init $(COMPOSE_FILE)
+	./scripts/init.sh $(COMPOSE_FILE)
 
 .PHONY: deploy
 deploy:
-	./scripts/deploy $(COMPOSE_FILE)
+	./scripts/deploy.py $(COMPOSE_FILE)
 
 .PHONY: develop
 develop:
