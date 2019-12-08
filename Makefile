@@ -17,8 +17,7 @@ develop:
 		--name app-dev \
 		--entrypoint /bin/sh app \
 		-c 'while sleep 3600; do :; done'
-	trap 'make stop' EXIT; \
-	docker exec -it app-dev /bin/sh
+	trap 'make stop' EXIT; docker exec -it app-dev /bin/sh
 
 .PHONY: stop
 stop:
