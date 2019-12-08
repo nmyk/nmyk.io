@@ -8,7 +8,6 @@ import boto3
 
 SPACES_REGION = 'nyc3'
 SPACES_BUCKET = 'nmyk'
-COMPOSE_FILE = 'deployment/docker-compose.yml'
 
 content_types = {
     '.css': 'text/css',
@@ -44,13 +43,13 @@ def upload(asset):
     print(f'❯ {asset}')
 
 
-def restart_app():
+def restart_app(compose_file):
     cmd = 'ssh root@nmyk.io /bin/bash'.split()
     heredoc = ("<<-'ENDSSH'\n"
                "cd nmyk.io\n"
-               f"docker-compose -f {COMPOSE_FILE} down --remove-orphans \n"
+               f"docker-compose -f {compose_file} down --remove-orphans \n"
                "git checkout -- . && git pull\n"
-               f"docker-compose -f {COMPOSE_FILE} up --build -d\n"
+               f"docker-compose -f {compose_file} up --build -d\n"
                "ENDSSH")
     cmd.append(heredoc)
     if subprocess.run(cmd).returncode:
@@ -60,9 +59,10 @@ def restart_app():
 
 
 def main():
+    compose_file = sys.argv[1]
     for asset in os.listdir('web/assets'):
         upload(asset)
-    restart_app()
+    restart_app(compose_file)
     print('Done')
 
 

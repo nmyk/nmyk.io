@@ -1,7 +1,7 @@
 #!/bin/bash
 # Adapted from Philipp's script: https://github.com/wmnnd/nginx-certbot/blob/master/init-letsencrypt.sh
 
-export COMPOSE_FILE=deployment/docker-compose.yml
+export COMPOSE_FILE=$1
 
 domains=(nmyk.io www.nmyk.io nickmykins.com www.nickmykins.com)
 rsa_key_size=4096
