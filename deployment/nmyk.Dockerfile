@@ -8,7 +8,7 @@ RUN apt update && apt install \
 
 WORKDIR /app
 COPY main.go ./
-COPY web/ ./web/
+COPY web/index.html ./web/
 
 RUN mkdir /build
 RUN go build -v -o /build/nmyk
