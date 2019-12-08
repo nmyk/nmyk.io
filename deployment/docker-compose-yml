@@ -22,6 +22,6 @@ services:
     restart: unless-stopped
   nmyk:
     build:
-      context: .
-      dockerfile: deployment/Dockerfile
+      context: ../
+      dockerfile: ./deployment/Dockerfile
     restart: always
