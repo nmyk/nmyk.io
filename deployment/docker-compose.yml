@@ -1,6 +1,7 @@
 version: '3'
 services:
   nginx:
+    build: ../
     depends_on:
       - nmyk
     image: nginx:1.16.1-alpine
@@ -14,6 +15,7 @@ services:
     command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
     restart: unless-stopped
   certbot:
+    build: ../
     image: certbot/certbot
     volumes:
       - ./data/certbot/conf:/etc/letsencrypt
