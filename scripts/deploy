@@ -8,6 +8,7 @@ import boto3
 
 SPACES_REGION='nyc3'
 SPACES_BUCKET='nmyk'
+COMPOSE_FILE = 'deployment/docker-compose.yml'
 
 content_types = {
     '.css': 'text/css',
@@ -48,7 +49,8 @@ def restart_app():
     heredoc = ("<<-'ENDSSH'\n"
                "cd nmyk.io\n"
                "git checkout -- . && git pull\n"
-               "docker-compose -f deployment/docker-compose.yml down && docker-compose -f deployment/docker-compose.yml up --build -d\n"
+               f"docker-compose -f {COMPOSE_FILE} down && "
+               f"docker-compose -f {COMPOSE_FILE} up --build -d\n"
                "ENDSSH")
     cmd.append(heredoc)
     if subprocess.run(cmd).returncode:

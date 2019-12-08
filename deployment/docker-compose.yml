@@ -1,29 +1,27 @@
 version: '3'
 services:
   nginx:
-    build: ../
+    image: nginx:1.16.1-alpine
     depends_on:
       - nmyk
-    image: nginx:1.16.1-alpine
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./config/nginx:/etc/nginx/conf.d
-      - ./data/certbot/conf:/etc/letsencrypt
-      - ./data/certbot/www:/var/www/certbot
+      - ../config/nginx:/etc/nginx/conf.d
+      - ../data/certbot/conf:/etc/letsencrypt
+      - ../data/certbot/www:/var/www/certbot
     command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
     restart: unless-stopped
   certbot:
-    build: ../
     image: certbot/certbot
     volumes:
-      - ./data/certbot/conf:/etc/letsencrypt
-      - ./data/certbot/www:/var/www/certbot
+      - ../data/certbot/conf:/etc/letsencrypt
+      - ../data/certbot/www:/var/www/certbot
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     restart: unless-stopped
   nmyk:
     build:
       context: ../
-      dockerfile: ./deployment/Dockerfile
+      dockerfile: ./deployment/nmyk.Dockerfile
     restart: always
