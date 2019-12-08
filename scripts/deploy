@@ -49,7 +49,7 @@ def restart_app():
     heredoc = ("<<-'ENDSSH'\n"
                "cd nmyk.io\n"
                "git checkout -- . && git pull\n"
-               f"docker-compose -f {COMPOSE_FILE} down && "
+               f"docker-compose -f {COMPOSE_FILE} down --remove-orphans && "
                f"docker-compose -f {COMPOSE_FILE} up --build -d\n"
                "ENDSSH")
     cmd.append(heredoc)
