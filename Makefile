@@ -13,7 +13,8 @@ develop:
 	docker-compose -f $(COMPOSE_FILE) build app
 	docker-compose -f $(COMPOSE_FILE) \
 		run -d \
-		--volume $(shell pwd):/app \
+		--volume $(shell pwd)/pkg:/app/pkg \
+		--volume $(shell pwd)/web:/app/web \
 		--publish 8080:8080 \
 		--name app-dev \
 		--entrypoint /bin/sh app \
