@@ -9,8 +9,13 @@ data_path="./data/certbot"
 email="nick@nmyk.io"
 staging=0
 
+if ! [-x "$(command -v make)" ]; then
+	echo "❯ Installing make ..."
+	sudo apt install make -y
+fi
+
 if ! [ -x "$(command -v docker-compose)" ]; then
-  echo "❯ Installing docker"
+  echo "❯ Installing docker ..."
   DOCKER_PLATFORM=https://download.docker.com/linux/ubuntu
   curl -fsSL $DOCKER_PLATFORM/gpg | sudo apt-key add -
   sudo apt-key fingerprint 0EBFCD88
@@ -19,7 +24,7 @@ if ! [ -x "$(command -v docker-compose)" ]; then
      $(lsb_release -cs) \
      stable" -y 
   sudo apt-get update
-  sudo apt install docker-ce docker-compose
+  sudo apt install docker-ce docker-compose -y
 fi
 
 if [ -d "$data_path" ]; then

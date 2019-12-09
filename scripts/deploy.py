@@ -47,9 +47,9 @@ def restart_app(compose_file):
     cmd = 'ssh root@nmyk.io /bin/bash'.split()
     heredoc = ("<<-'ENDSSH'\n"
                "cd nmyk.io\n"
-               f"docker-compose -f {compose_file} down --remove-orphans \n"
+               "make stop\n"
                "git checkout -- . && git pull\n"
-               f"docker-compose -f {compose_file} up --build -d\n"
+               f"make run-prod\n"
                "ENDSSH")
     cmd.append(heredoc)
     if subprocess.run(cmd).returncode:

@@ -20,6 +20,10 @@ develop:
 		-c 'while sleep 3600; do :; done'
 	trap 'make stop' EXIT; docker exec -it app-dev /bin/sh
 
+.PHONY: run-prod
+run-prod:
+	docker-compose -f $(COMPOSE_FILE) up -d --build
+
 .PHONY: stop
 stop:
 	docker-compose -f $(COMPOSE_FILE) down --remove-orphans
