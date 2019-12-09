@@ -5,6 +5,6 @@ WORKDIR /app
 COPY . /app/
 
 RUN mkdir /build
-RUN go build -v -o /build/app
+RUN go build -pkgdir pkg -v -o /build/app
 
 ENTRYPOINT ["/build/app"]
