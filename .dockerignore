@@ -1,0 +1,6 @@
+# Ignore everything
+**
+
+# Except pkg/ and web/index.html
+!pkg/**
+!web/index.html
