@@ -49,7 +49,7 @@ def restart_app(compose_file):
                "cd nmyk.io\n"
                "make stop\n"
                "git checkout -- . && git pull\n"
-               f"make run-prod\n"
+               "make run-prod\n"
                "ENDSSH")
     cmd.append(heredoc)
     if subprocess.run(cmd).returncode:
