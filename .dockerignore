@@ -1,6 +1,6 @@
 # Ignore everything
 **
 
-# Except pkg/ and web/index.html
+# Except pkg/ and web/templates
 !pkg/**
-!web/index.html
+!web/templates/**
