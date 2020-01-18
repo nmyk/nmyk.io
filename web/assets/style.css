@@ -28,6 +28,7 @@ div.vspace100px {
     border: 1px solid var(--main-text-color);
     padding: 10px;
     border-radius: 3px;
+    width: 375px;
 }
 
 hr {

@@ -6,7 +6,7 @@ import (
 )
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "web/index.html")
+	http.ServeFile(w, r, "web/templates/index.html")
 }
 
 func main() {
