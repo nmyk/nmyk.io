@@ -14,17 +14,24 @@ function hyphenConcatChoices(first, second) {
     return [chooseOne(first), chooseOne(second)].join('-');
 }
 
-function newLocalPart() {
+function _newLocalPart() {
     var noun = words['nouns'];
     var adjective = words['adjectives'];
     var adverbly = words['adverbs'];
     var gerunding = words['gerunds'];
-    var ret;
-    if (chooseOne([0, 1])) { ret = hyphenConcatChoices(adjective, noun); }
-    if (chooseOne([0, 1])) { ret = hyphenConcatChoices(gerunding, noun); }
-    ret = hyphenConcatChoices(gerunding, adverbly);
-    // Longer than 25 chars breaks the div
-    if (ret.length <= 25) { return ret; } else { return newLocalPart(); }
+    if (chooseOne([0, 1])) { return hyphenConcatChoices(adjective, noun); }
+    if (chooseOne([0, 1])) { return hyphenConcatChoices(gerunding, noun); }
+    return hyphenConcatChoices(gerunding, adverbly);
+}
+
+function newLocalPart() {
+    var localPart;
+    do {
+        localPart = _newLocalPart();
+    }
+    // Longer than 25 chars breaks the div.
+    while (localPart.length > 25);
+    return localPart;
 }
 
 function setEmailAddress() {
