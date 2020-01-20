@@ -19,9 +19,12 @@ function newLocalPart() {
     var adjective = words['adjectives'];
     var adverbly = words['adverbs'];
     var gerunding = words['gerunds'];
-    if (chooseOne([0, 1])) { return hyphenConcatChoices(adjective, noun); }
-    if (chooseOne([0, 1])) { return hyphenConcatChoices(gerunding, noun); }
-    return hyphenConcatChoices(gerunding, adverbly);
+    var ret;
+    if (chooseOne([0, 1])) { ret = hyphenConcatChoices(adjective, noun); }
+    if (chooseOne([0, 1])) { ret = hyphenConcatChoices(gerunding, noun); }
+    ret = hyphenConcatChoices(gerunding, adverbly);
+    // Longer than 25 chars breaks the div
+    if (ret.length <= 25) { return ret; } else { return newLocalPart(); }
 }
 
 function setEmailAddress() {
