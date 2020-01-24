@@ -23,8 +23,8 @@ body {
         var(--purple)
     );
     background-size: 600% 100%;
-    -webkit-animation: Animation 240s ease-in-out infinite;
-    -moz-animation: Animation 240s ease-in-out infinite;
+    -webkit-animation: Animation 400s ease-in-out infinite;
+    -moz-animation: Animation 400s ease-in-out infinite;
     animation: Animation 400s ease-in-out infinite;
 }
 
