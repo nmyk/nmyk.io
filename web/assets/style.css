@@ -1,10 +1,7 @@
 :root {
     --main-text-color: #e8dbb6;
     --purple: #8f3f71;
-    --light-purple:#b16286;
-    --red: #9d0006;
-    --yellow: #b57614;
-    --orange: #af3a03;
+    --orange: #d65d0e;
     --aqua: #427b58;
     --light-aqua: #8ec07c;
     --blue: #076678;
@@ -15,14 +12,13 @@ body {
     color: var(--main-text-color);
     background: linear-gradient(
         to right, 
+        var(--orange),
         var(--purple),
         var(--blue),
         var(--aqua),
-        var(--orange),
-        var(--red),
-        var(--purple)
+        var(--orange)
     );
-    background-size: 600% 100%;
+    background-size: 200% 100%;
     -webkit-animation: Animation 400s ease-in-out infinite;
     -moz-animation: Animation 400s ease-in-out infinite;
     animation: Animation 400s ease-in-out infinite;
@@ -33,19 +29,19 @@ body {
 }
 
 @-webkit-keyframes Animation {
-    0%{background-position:0% 0%; filter: hue-rotate(0deg);}
-    50%{background-position:600% 0%; filter: hue-rotate(360deg);}
-    100%{background-position:0% 0%; filter: hue-rotate(0deg);}
+    0%{background-position:0% 0%; filter: hue-rotate(-120deg);}
+    50%{background-position:100% 0%; filter: hue-rotate(240deg);}
+    100%{background-position:0% 0%; filter: hue-rotate(-120deg);}
 }
 @-moz-keyframes Animation {
-    0%{background-position:0% 0%; filter: hue-rotate(0deg);}
-    50%{background-position:600% 0%; filter: hue-rotate(360deg);}
-    100%{background-position:0% 0%; filter: hue-rotate(0deg);}
+    0%{background-position:0% 0%; filter: hue-rotate(-120deg);}
+    50%{background-position:100% 0%; filter: hue-rotate(240deg);}
+    100%{background-position:0% 0%; filter: hue-rotate(-120deg);}
 }
 @keyframes Animation { 
-    0%{background-position:0% 0%; filter: hue-rotate(0deg);}
-    50%{background-position:600% 0%; filter: hue-rotate(360deg);}
-    100%{background-position:0% 0%; filter: hue-rotate(0deg);}
+    0%{background-position:0% 0%; filter: hue-rotate(-120deg);}
+    50%{background-position:100% 0%; filter: hue-rotate(240deg);}
+    100%{background-position:0% 0%; filter: hue-rotate(-120deg);}
 }
 
 html {
