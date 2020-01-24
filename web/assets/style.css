@@ -8,6 +8,7 @@
     --aqua: #427b58;
     --light-aqua: #8ec07c;
     --blue: #076678;
+    --black: #282828;
 }
 
 body {
@@ -25,6 +26,10 @@ body {
     -webkit-animation: Animation 400s ease-in-out infinite;
     -moz-animation: Animation 400s ease-in-out infinite;
     animation: Animation 400s ease-in-out infinite;
+}
+
+::selection {
+    background: var(--black);
 }
 
 @-webkit-keyframes Animation {
