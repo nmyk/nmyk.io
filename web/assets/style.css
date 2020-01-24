@@ -1,12 +1,47 @@
 :root {
-    --bg-color: #282828;
     --main-text-color: #e8dbb6;
-    --link-text-color: #c9899a;
+    --purple: #8f3f71;
+    --light-purple:#b16286;
+    --red: #9d0006;
+    --yellow: #b57614;
+    --orange: #af3a03;
+    --aqua: #427b58;
+    --light-aqua: #8ec07c;
+    --blue: #076678;
+    --light-blue: #83a598;
 }
 
 body {
-    background-color: var(--bg-color);
     color: var(--main-text-color);
+    background: linear-gradient(
+        to right, 
+        var(--purple),
+        var(--blue),
+        var(--aqua),
+        var(--orange),
+        var(--red),
+        var(--purple)
+    );
+    background-size: 600% 100%;
+    -webkit-animation: Animation 240s ease-in-out infinite;
+    -moz-animation: Animation 240s ease-in-out infinite;
+    animation: Animation 400s ease-in-out infinite;
+}
+
+@-webkit-keyframes Animation {
+    0%{background-position:0% 0%; filter: hue-rotate(0deg);}
+    50%{background-position:600% 0%; filter: hue-rotate(360deg);}
+    100%{background-position:0% 0%; filter: hue-rotate(0deg);}
+}
+@-moz-keyframes Animation {
+    0%{background-position:0% 0%; filter: hue-rotate(0deg);}
+    50%{background-position:600% 0%; filter: hue-rotate(360deg);}
+    100%{background-position:0% 0%; filter: hue-rotate(0deg);}
+}
+@keyframes Animation { 
+    0%{background-position:0% 0%; filter: hue-rotate(0deg);}
+    50%{background-position:600% 0%; filter: hue-rotate(360deg);}
+    100%{background-position:0% 0%; filter: hue-rotate(0deg);}
 }
 
 html {
@@ -24,8 +59,8 @@ div.vspace100px {
     display: table;
     margin-right: auto;
     margin-left: auto;
-    background-color: #303030;
-    border: 1px solid var(--main-text-color);
+    background-color: rgba(0,0,0,0.2);
+    #border: 1px solid var(--main-text-color);
     padding: 10px;
     border-radius: 3px;
     width: 360px;
@@ -34,17 +69,18 @@ div.vspace100px {
 hr {
     border: 0;
     height: 0;
+    visibility: hidden;
     border-top: 1px solid rgba(0, 0, 0, 0.11);
     border-bottom: 1px solid rgba(232, 219, 182, 0.32);
 }
 
 a {
-    color: var(--link-text-color);
+    color: var(--light-aqua);
     text-decoration: none;
 }
 
 a:hover {
-    color: var(--link-text-color);
+    color: var(--light-aqua);
     text-decoration: underline;
 }
 
