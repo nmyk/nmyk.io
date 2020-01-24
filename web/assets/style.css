@@ -18,7 +18,7 @@ body {
         var(--aqua),
         var(--orange)
     );
-    background-size: 200% 100%;
+    background-size: 400% 100%;
     -webkit-animation: Animation 400s ease-in-out infinite;
     -moz-animation: Animation 400s ease-in-out infinite;
     animation: Animation 400s ease-in-out infinite;
@@ -30,17 +30,17 @@ body {
 
 @-webkit-keyframes Animation {
     0%{background-position:0% 0%; filter: hue-rotate(-120deg);}
-    50%{background-position:100% 0%; filter: hue-rotate(240deg);}
+    50%{background-position:200% 0%; filter: hue-rotate(240deg);}
     100%{background-position:0% 0%; filter: hue-rotate(-120deg);}
 }
 @-moz-keyframes Animation {
     0%{background-position:0% 0%; filter: hue-rotate(-120deg);}
-    50%{background-position:100% 0%; filter: hue-rotate(240deg);}
+    50%{background-position:200% 0%; filter: hue-rotate(240deg);}
     100%{background-position:0% 0%; filter: hue-rotate(-120deg);}
 }
 @keyframes Animation { 
     0%{background-position:0% 0%; filter: hue-rotate(-120deg);}
-    50%{background-position:100% 0%; filter: hue-rotate(240deg);}
+    50%{background-position:200% 0%; filter: hue-rotate(240deg);}
     100%{background-position:0% 0%; filter: hue-rotate(-120deg);}
 }
 
