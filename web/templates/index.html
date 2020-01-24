@@ -6,13 +6,20 @@
    <link href="https://cdn.nmyk.io/assets/style.css" rel="stylesheet">
    <link href="https://cdn.nmyk.io/assets/favicon.ico" rel="icon">
    <script type="text/javascript" src="https://cdn.nmyk.io/assets/email_address.js"></script>
+   <script>
+      function setAnimationStartPoint() {
+        var body = document.getElementById("mainBody")[0];
+        var delay = -Math.floor(Math.random() * Math.floor(400));
+        body.style.animationDelay = delay+"s";
+      }
+   </script>
    <meta charset="UTF-8">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <meta name="description" content="Nick Mykins is a software engineer and electronic musician based in New York City."/>
    <title>nmyk.io</title>
 </head>
 
-<body>
+<body id="mainBody" onload="setAnimationStartPoint()">
 <div class="vspace100px"></div>
 <div class="container">
    <b>Nick Mykins</b>
