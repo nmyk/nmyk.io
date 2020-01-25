@@ -1,8 +1,8 @@
 :root {
     --main-text-color: #e8dbb6;
-    --purple: #8f3f71;
-    --orange: #af3a03;
-    --aqua: #427b58;
+    --purple: #732b77;
+    --maroon: #86013a;
+    --aqua: #315f4e;
     --light-aqua: #8ec07c;
     --blue: #076678;
     --black: #282828;
@@ -13,36 +13,36 @@ body {
     text-align: center;
     background: linear-gradient(
             to right,
-            var(--orange),
+            var(--maroon),
             var(--purple),
             var(--blue),
             var(--aqua),
-            var(--orange)
+            var(--maroon)
     );
-    background-size: 400% 100%;
+    background-size: 4000px 100px;
     -webkit-animation: Animation 400s ease-in-out infinite;
     -moz-animation: Animation 400s ease-in-out infinite;
     animation: Animation 400s ease-in-out infinite;
 }
 
-::selection {
-    background: var(--black);
-}
-
 @-webkit-keyframes Animation {
     0%{background-position:0% 0%; filter: hue-rotate(-120deg);}
-    50%{background-position:200% 0%; filter: hue-rotate(240deg);}
+    50%{background-position:4000px 0px; filter: hue-rotate(240deg);}
     100%{background-position:0% 0%; filter: hue-rotate(-120deg);}
 }
 @-moz-keyframes Animation {
     0%{background-position:0% 0%; filter: hue-rotate(-120deg);}
-    50%{background-position:200% 0%; filter: hue-rotate(240deg);}
+    50%{background-position:4000px 0px; filter: hue-rotate(240deg);}
     100%{background-position:0% 0%; filter: hue-rotate(-120deg);}
 }
 @keyframes Animation {
     0%{background-position:0% 0%; filter: hue-rotate(-120deg);}
-    50%{background-position:200% 0%; filter: hue-rotate(240deg);}
+    50%{background-position:4000px 0px; filter: hue-rotate(240deg);}
     100%{background-position:0% 0%; filter: hue-rotate(-120deg);}
+}
+
+::selection {
+    background: var(--black);
 }
 
 html {
@@ -89,3 +89,4 @@ a:hover {
     display: inline-block;
     margin-left: 5px;
 }
+
