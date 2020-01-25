@@ -1,4 +1,4 @@
-var words = {
+const words = {
     "adverbs": ["afterward", "again", "ahead", "alike", "alone", "already", "also", "anxiously", "anyway", "anywhere", "apart", "around", "aside", "asynchronously", "automatically", "away", "back", "badly", "better", "carefully", "certainly", "clearly", "closely", "completely", "concurrently", "constantly", "correctly", "daily", "directly", "double", "doubtfully", "down", "dutifully", "earlier", "early", "earnestly", "easily", "enough", "entirely", "equally", "eternally", "eventually", "everywhere", "exactly", "fairly", "faithfully", "far", "fast", "finally", "first", "for-real", "forever", "forward", "frequently", "fully", "further", "furtively", "generally", "gently", "gradually", "greatly", "guiltily", "happily", "heartily", "here", "hopelessly", "however", "immediately", "indeed", "instead", "intensely", "internally", "ironically", "irresistably", "later", "long", "loudly", "lovingly", "luckily", "madly", "masterfully", "maybe", "more", "mostly", "naturally", "nearby", "neatly", "never", "nevertheless", "nicely", "now", "obsessively", "occasionally", "once", "out", "particularly", "partly", "perfectly", "perhaps", "prettily", "properly", "quickly", "quietly", "randomly", "rapidly", "recently", "repeatedly", "sarcastically", "silly", "simply", "slightly", "sloppily", "slowly", "softly", "somehow", "sometime", "somewhere", "soon", "still", "suddenly", "there", "therefore", "thus", "tightly", "together", "twice", "unstoppably", "up", "upward", "usually", "viciously", "well", "widely", "with-me", "within"],
     "gerunds": ["acting", "backing-up", "baking", "bathing", "beaming", "becoming", "beginning", "blinking", "boiling", "bowling", "bragging", "bullying", "bursting", "buzzing", "changing", "chatting", "cheering", "cleaning", "cleaving", "coding", "collaborating", "connecting", "contracting", "cooking", "covering", "crushing", "cutting", "dating", "daydreaming", "disgracing", "disrupting", "dissolving", "downloading", "drinking", "driving", "eating", "enfolding", "exercising", "expanding", "exploding", "fighting", "flailing", "fleeing", "flipping", "floating", "flying", "freewheeling", "gardening", "getting", "giving", "glistening", "glowing", "grinning", "healing", "hiding", "honoring", "hoping", "humiliating", "hunting", "ignoring", "inflaming", "ingesting", "insulting", "integrating", "investigating", "joking", "laughing", "leaping", "leaving", "leering", "looming", "losing", "loving", "lying", "making", "missing", "moping", "moving", "napping", "oiling", "panicking", "playing", "pointing", "pouring", "preaching", "protesting", "putting", "quilting", "recycling", "relaxing", "respecting", "revolutionizing", "revolving", "riding", "rising", "rotating", "running", "saving", "scrubbing", "seeing", "setting", "shaking", "shining", "shivering", "shopping", "singing", "sitting", "skiing", "sleeping", "slicing", "smoking", "sneering", "snoring", "sobbing", "solving", "stashing", "stinging", "studying", "sweating", "swimming", "swinging", "thinking", "tinkering", "toiling", "training", "transforming", "trying", "typing", "understanding", "using", "vibrating", "weeping", "winning", "wishing", "wobbling", "worrying", "worshipping", "wringing", "writing", "yearning"],
     "adjectives": ["able", "active", "actual", "additional", "ambient", "angry", "animated", "atmospheric", "atomic", "available", "average", "bad", "basic", "best", "bigger", "biggest", "busy", "central", "certain", "characteristic", "clear", "comfortable", "common", "complete", "complex", "concerned", "continued", "curious", "current", "daily", "dangerous", "dead", "depressed", "different", "difficult", "direct", "due", "easier", "easy", "electric", "empty", "entire", "equal", "essential", "extra", "familiar", "famous", "feline", "final", "finest", "flat", "foreign", "former", "fourth", "free", "fresh", "friendly", "full", "furry", "general", "golden", "good", "great", "greater", "greatest", "green", "happy", "hard", "heavy", "high", "higher", "highest", "hot", "huge", "important", "impossible", "independent", "indestructible", "individual", "industrial", "large", "larger", "largest", "last", "least", "likely", "limited", "little", "live", "living", "local", "lonely", "loose", "lovely", "low", "lower", "lucky", "main", "major", "manly", "married", "meanest", "military", "modern", "mortal", "musical", "my", "mysterious", "national", "native", "natural", "nearest", "necessary", "negative", "nervous", "new", "next", "nice", "normal", "numerical", "old", "older", "oldest", "open", "ordinary", "original", "other", "our", "paranoid", "particular", "personal", "physical", "plural", "political", "poor", "popular", "positive", "possible", "powerful", "practical", "previous", "private", "quiet", "ready", "real", "recent", "red", "regular", "related", "religious", "remarkable", "rich", "safe", "same", "satisfied", "scientific", "second", "self-aware", "semantic", "separate", "serious", "severed", "sharp", "short", "similar", "single", "small", "smaller", "smallest", "social", "soft", "solid", "southern", "spacious", "special", "specific", "steady", "strong", "stronger", "successful", "such", "sudden", "terrible", "third", "tiny", "total", "tropical", "typical", "unhappy", "unknown", "unusual", "upper", "useful", "usual", "vacuous", "valuable", "vertical", "weak", "western", "white", "whole", "wide", "willing", "wonderful", "worried", "worse", "wrong", "young", "younger", "your"],
@@ -6,7 +6,7 @@ var words = {
 };
 
 function chooseOne(arr) {
-    var i = Math.floor(Math.random() * arr.length);
+    const i = Math.floor(Math.random() * arr.length);
     return arr[i];
 }
 
@@ -15,17 +15,17 @@ function hyphenConcatChoices(first, second) {
 }
 
 function _newLocalPart() {
-    var noun = words['nouns'];
-    var adjective = words['adjectives'];
-    var adverbly = words['adverbs'];
-    var gerunding = words['gerunds'];
+    const noun = words['nouns'];
+    const adjective = words['adjectives'];
+    const adverbly = words['adverbs'];
+    const gerunding = words['gerunds'];
     if (chooseOne([0, 1])) { return hyphenConcatChoices(adjective, noun); }
     if (chooseOne([0, 1])) { return hyphenConcatChoices(gerunding, noun); }
     return hyphenConcatChoices(gerunding, adverbly);
 }
 
 function newLocalPart() {
-    var localPart;
+    let localPart;
     do {
         localPart = _newLocalPart();
     }
@@ -35,8 +35,8 @@ function newLocalPart() {
 }
 
 function setEmailAddress() {
-    var emailAddress = document.getElementById("emailAddress");
-    var newEmailAddress = newLocalPart() + "@nmyk.io";
+    const emailAddress = document.getElementById("emailAddress");
+    const newEmailAddress = newLocalPart() + "@nmyk.io";
     emailAddress.href = "mailto:" + newEmailAddress;
     emailAddress.innerHTML = newEmailAddress;
 }
