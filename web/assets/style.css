@@ -10,13 +10,14 @@
 
 body {
     color: var(--main-text-color);
+    text-align: center;
     background: linear-gradient(
-        to right, 
-        var(--orange),
-        var(--purple),
-        var(--blue),
-        var(--aqua),
-        var(--orange)
+            to right,
+            var(--orange),
+            var(--purple),
+            var(--blue),
+            var(--aqua),
+            var(--orange)
     );
     background-size: 400% 100%;
     -webkit-animation: Animation 400s ease-in-out infinite;
@@ -38,7 +39,7 @@ body {
     50%{background-position:200% 0%; filter: hue-rotate(240deg);}
     100%{background-position:0% 0%; filter: hue-rotate(-120deg);}
 }
-@keyframes Animation { 
+@keyframes Animation {
     0%{background-position:0% 0%; filter: hue-rotate(-120deg);}
     50%{background-position:200% 0%; filter: hue-rotate(240deg);}
     100%{background-position:0% 0%; filter: hue-rotate(-120deg);}
@@ -50,19 +51,19 @@ html {
     font-family: 'Inconsolata', monospace;
 }
 
-div.vspace100px {
+div.vspace50px {
     clear: both;
-    height: 100px;
+    height: 50px;
 }
 
 .container {
     display: table;
-    margin-right: auto;
+    text-align: left;
     margin-left: auto;
-    background-color: rgba(0,0,0,0.2);
-    padding: 10px;
-    border-radius: 3px;
-    width: 360px;
+    margin-right: auto;
+    padding: 30px;
+    min-width: 360px;
+    max-width: 600px;
 }
 
 hr {
