@@ -29,8 +29,8 @@ function newLocalPart() {
     do {
         localPart = _newLocalPart();
     }
-    // Longer than 25 chars breaks the div.
-    while (localPart.length > 25);
+    // Longer than 23 chars breaks the div if it happens to be at min-width.
+    while (localPart.length > 23);
     return localPart;
 }
 
