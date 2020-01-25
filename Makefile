@@ -6,7 +6,7 @@ init:
 
 .PHONY: deploy
 deploy:
-	./scripts/deploy.py $(COMPOSE_FILE)
+	./scripts/deploy.py
 
 .PHONY: develop
 develop:

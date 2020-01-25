@@ -55,7 +55,7 @@ def with_secrets_on_remote_host(func):
 
 
 @with_secrets_on_remote_host
-def restart_app(compose_file):
+def restart_app():
     cmd = 'ssh root@nmyk.io /bin/bash'.split()
     heredoc = ("<<-'ENDSSH'\n"
                "cd nmyk.io\n"
@@ -71,10 +71,9 @@ def restart_app(compose_file):
 
 
 def main():
-    compose_file = sys.argv[1]
     for asset in os.listdir('web/assets'):
         upload(asset)
-    restart_app(compose_file)
+    restart_app()
     print('Done')
 
 
