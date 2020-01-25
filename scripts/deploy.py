@@ -14,8 +14,11 @@ content_types = {
     '.js': 'text/javascript'
 }
 
-with open('secrets.json') as secrets_file:
-    secrets = json.load(secrets_file)
+with open('secrets.env', 'r') as secrets_file:
+    secrets = dict()
+    for line in secrets_file:
+        k, v = line.split('=')
+        secrets[k] = v.strip()
 
 spaces = boto3.client(
     's3',
@@ -43,6 +46,15 @@ def upload(asset):
     print(f'❯ {asset}')
 
 
+def with_secrets_on_remote_host(func):
+    def wrapped_func(*args, **kwargs):
+        os.system('scp secrets.env root@nmyk.io:~/nmyk.io')
+        func(*args, **kwargs)
+        os.system('ssh root@nmyk.io "rm ~/nmyk.io/secrets.env"')
+    return wrapped_func
+
+
+@with_secrets_on_remote_host
 def restart_app(compose_file):
     cmd = 'ssh root@nmyk.io /bin/bash'.split()
     heredoc = ("<<-'ENDSSH'\n"
