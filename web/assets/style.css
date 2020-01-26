@@ -22,9 +22,15 @@ body {
             var(--maroon)
     );
     background-size: 8000px 100%;
-    -webkit-animation: bg-animation 400s linear infinite;
-    -moz-animation: bg-animation 400s linear infinite;
-    animation: bg-animation 400s linear infinite;
+    -webkit-animation-name: bg-animation;
+    -moz-animation-name: bg-animation;
+    animation-name: bg-animation;
+    -webkit-animation-iteration-count: infinite;
+    -moz-animation-iteration-count: infinite;
+    animation-iteration-count: infinite;
+    -webkit-animation-timing-function: linear;
+    -moz-animation-timing-function: linear;
+    animation-timing-function: linear;
 }
 
 @-webkit-keyframes bg-animation {
