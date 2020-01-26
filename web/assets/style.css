@@ -1,11 +1,11 @@
 :root {
-    --main-text-color: #e8dbb6;
-    --purple: #5b0863;
+    --main-text-color: #ede2c4;
+    --link-text-color: #e4c381;
     --maroon: #6b002e;
-    --aqua: #0b4c1a;
-    --light-aqua: #8ec07c;
-    --blue: #064256;
     --brown: #613805;
+    --green: #0b4c1a;
+    --blue: #064256;
+    --purple: #5b0863;
     --black: #282828;
 }
 
@@ -17,7 +17,7 @@ body {
             var(--maroon),
             var(--purple),
             var(--blue),
-            var(--aqua),
+            var(--green),
             var(--brown),
             var(--maroon)
     );
@@ -73,12 +73,12 @@ hr {
 }
 
 a {
-    color: var(--light-aqua);
+    color: var(--link-text-color);
     text-decoration: none;
 }
 
 a:hover {
-    color: var(--light-aqua);
+    color: var(--link-text-color);
     text-decoration: underline;
 }
 
