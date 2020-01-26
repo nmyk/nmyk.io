@@ -1,10 +1,11 @@
 :root {
     --main-text-color: #e8dbb6;
-    --purple: #5d2361;
-    --maroon: #6f0030;
-    --aqua: #315f4e;
+    --purple: #5b0863;
+    --maroon: #6b002e;
+    --aqua: #0b4c1a;
     --light-aqua: #8ec07c;
-    --blue: #076678;
+    --blue: #064256;
+    --brown: #613805;
     --black: #282828;
 }
 
@@ -17,28 +18,29 @@ body {
             var(--purple),
             var(--blue),
             var(--aqua),
+            var(--brown),
             var(--maroon)
     );
-    background-size: 5200px 100px;
-    -webkit-animation: Animation 400s ease-in-out infinite;
-    -moz-animation: Animation 400s ease-in-out infinite;
-    animation: Animation 400s ease-in-out infinite;
+    background-size: 8000px 100%;
+    -webkit-animation: bg-animation 400s linear infinite;
+    -moz-animation: bg-animation 400s linear infinite;
+    animation: bg-animation 400s linear infinite;
 }
 
-@-webkit-keyframes Animation {
-    0%{background-position:0% 0%; filter: hue-rotate(-120deg);}
-    50%{background-position:5200px 0px; filter: hue-rotate(240deg);}
-    100%{background-position:0% 0%; filter: hue-rotate(-120deg);}
+@-webkit-keyframes bg-animation {
+    0%{background-position:0 0; filter: hue-rotate(-120deg);}
+    50%{background-position:8000px 0; filter: hue-rotate(240deg);}
+    100%{background-position:0 0; filter: hue-rotate(-120deg);}
 }
-@-moz-keyframes Animation {
-    0%{background-position:0% 0%; filter: hue-rotate(-120deg);}
-    50%{background-position:5200px 0px; filter: hue-rotate(240deg);}
-    100%{background-position:0% 0%; filter: hue-rotate(-120deg);}
+@-moz-keyframes bg-animation {
+    0%{background-position:0 0; filter: hue-rotate(-120deg);}
+    50%{background-position:8000px 0; filter: hue-rotate(240deg);}
+    100%{background-position:0 0; filter: hue-rotate(-120deg);}
 }
-@keyframes Animation {
-    0%{background-position:0% 0%; filter: hue-rotate(-120deg);}
-    50%{background-position:5200px 0px; filter: hue-rotate(240deg);}
-    100%{background-position:0% 0%; filter: hue-rotate(-120deg);}
+@keyframes bg-animation {
+    0%{background-position:0 0; filter: hue-rotate(-120deg);}
+    50%{background-position:8000px 0; filter: hue-rotate(240deg);}
+    100%{background-position:0 0; filter: hue-rotate(-120deg);}
 }
 
 ::selection {
