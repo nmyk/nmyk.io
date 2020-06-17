@@ -1,0 +1,131 @@
+:root {
+    --main-text-color: #ecdfc6;
+    --link-text-color: #dbb870;
+    --maroon: #6b002e;
+    --brown: #613805;
+    --green: #0b4c1a;
+    --blue: #064256;
+    --purple: #5b0863;
+    --black: #282828;
+}
+
+* {
+    color: var(--main-text-color);
+    line-height: 23px;
+    font-size: 16px;
+    font-family: 'Inconsolata', monospace;
+}
+
+body {
+    text-align: center;
+    background: linear-gradient(
+            to right,
+            var(--maroon),
+            var(--purple),
+            var(--blue),
+            var(--green),
+            var(--brown),
+            var(--maroon)
+    );
+    background-size: 8000px 100%;
+    -webkit-animation-name: bg-animation;
+    -moz-animation-name: bg-animation;
+    animation-name: bg-animation;
+    -webkit-animation-iteration-count: infinite;
+    -moz-animation-iteration-count: infinite;
+    animation-iteration-count: infinite;
+    -webkit-animation-timing-function: linear;
+    -moz-animation-timing-function: linear;
+    animation-timing-function: linear;
+}
+
+@-webkit-keyframes bg-animation {
+    0%{background-position:0 0; filter: hue-rotate(-120deg);}
+    50%{background-position:8000px 0; filter: hue-rotate(240deg);}
+    100%{background-position:0 0; filter: hue-rotate(-120deg);}
+}
+@-moz-keyframes bg-animation {
+    0%{background-position:0 0; filter: hue-rotate(-120deg);}
+    50%{background-position:8000px 0; filter: hue-rotate(240deg);}
+    100%{background-position:0 0; filter: hue-rotate(-120deg);}
+}
+@keyframes bg-animation {
+    0%{background-position:0 0; filter: hue-rotate(-120deg);}
+    50%{background-position:8000px 0; filter: hue-rotate(240deg);}
+    100%{background-position:0 0; filter: hue-rotate(-120deg);}
+}
+
+::selection {
+    background: var(--black);
+}
+
+div.vspace50px {
+    clear: both;
+    height: 50px;
+}
+
+.container, .messagelog {
+    display: table;
+    text-align: left;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.container {
+    min-width: 360px;
+    max-width: 600px;
+    padding: 30px;
+}
+
+.messagelog {
+    padding: 10px;
+}
+
+hr {
+    visibility: hidden;
+}
+
+a {
+    color: var(--link-text-color);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--link-text-color);
+    text-decoration: underline;
+}
+
+.keys {
+    display: inline-block;
+    text-align: right;
+}
+
+.values {
+    display: inline-block;
+    margin-left: 5px;
+}
+
+input, textarea, .messagelog {
+    background: none;
+    border: 1px solid var(--main-text-color);
+    border-radius: 4px;
+}
+
+.mymessage {
+    text-align: right;
+    color: var(--link-text-color);
+}
+
+.theirmessage {
+    text-align: left;
+    color: var(--link-text-color);
+}
+
+input[type="text"] {
+    padding-left: 10px;
+    width: calc(100% - 66px);
+}
+
+input[type="submit"] {
+    width: 50px;
+}
