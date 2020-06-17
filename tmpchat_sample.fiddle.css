@@ -78,6 +78,8 @@ div.vspace50px {
 }
 
 .messagelog {
+    box-sizing: border-box;
+    width: 100%;
     padding: 10px;
 }
 
