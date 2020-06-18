@@ -123,9 +123,13 @@ input, textarea, .messagelog {
     color: var(--link-text-color);
 }
 
-input[type="text"] {
+input[type="messagetext"] {
     padding-left: 10px;
     width: calc(100% - 66px);
+}
+
+input[type="nametext"] {
+    padding-left: 5px;
 }
 
 input[type="submit"] {
