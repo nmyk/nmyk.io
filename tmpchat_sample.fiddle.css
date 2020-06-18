@@ -1,6 +1,6 @@
 :root {
     --main-text-color: #ecdfc6;
-    --link-text-color: #dbb870;
+    --alt-text-color: #dbb870;
     --maroon: #6b002e;
     --brown: #613805;
     --green: #0b4c1a;
@@ -64,6 +64,12 @@ div.vspace50px {
     height: 50px;
 }
 
+input, textarea, .messagelog {
+    background: none;
+    border: 1px solid var(--main-text-color);
+    border-radius: 4px;
+}
+
 .container, .messagelog {
     display: table;
     text-align: left;
@@ -83,17 +89,66 @@ div.vspace50px {
     padding: 10px;
 }
 
+.myname {
+    float: right;
+    display: block;
+    font-weight: bold;
+    text-align: right;
+    padding-left: 10px;
+}
+
+.theirname {
+    float: left;
+    font-weight: bold;
+    text-align: left;
+    padding-right: 10px;
+}
+
+.mymessage {
+    text-align: right;
+    overflow: hidden;
+    color: var(--alt-text-color);
+    margin-bottom: 10px;
+}
+
+.theirmessage {
+    text-align: left;
+    overflow: hidden;
+    color: var(--alt-text-color);
+    margin-bottom: 10px;
+}
+
+input[type="nametext"] {
+    padding-left: 5px;
+}
+
+textarea#messagetext {
+    padding-left: 10px;
+    line-height: 21px;
+    width: 100%;
+    resize: vertical;
+}
+
+.messagetextcontainer {
+    width: calc(100% - 66px);
+    float: left;
+}
+
+input[type="submit"] {
+    width: 50px;
+}
+
 hr {
     visibility: hidden;
 }
 
 a {
-    color: var(--link-text-color);
+    color: var(--alt-text-color);
     text-decoration: none;
 }
 
 a:hover {
-    color: var(--link-text-color);
+    color: var(--alt-text-color);
     text-decoration: underline;
 }
 
@@ -105,33 +160,4 @@ a:hover {
 .values {
     display: inline-block;
     margin-left: 5px;
-}
-
-input, textarea, .messagelog {
-    background: none;
-    border: 1px solid var(--main-text-color);
-    border-radius: 4px;
-}
-
-.mymessage {
-    text-align: right;
-    color: var(--link-text-color);
-}
-
-.theirmessage {
-    text-align: left;
-    color: var(--link-text-color);
-}
-
-input[type="messagetext"] {
-    padding-left: 10px;
-    width: calc(100% - 66px);
-}
-
-input[type="nametext"] {
-    padding-left: 5px;
-}
-
-input[type="submit"] {
-    width: 50px;
 }
