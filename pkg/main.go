@@ -15,17 +15,18 @@ const bgAnimationDurationSeconds = 400
 
 type IndexData struct {
 	BgAnimationDuration int
-	BgAnimationDelay int
+	BgAnimationDelay    int
 }
 
 func main() {
 	tmpl := template.Must(template.ParseFiles("web/templates/index.gohtml"))
+	http.HandleFunc("/echo", echo)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			d := IndexData{
-				BgAnimationDuration: bgAnimationDurationSeconds,
-				BgAnimationDelay: int(-time.Now().Unix() % bgAnimationDurationSeconds),
-			}
-			tmpl.Execute(w, d)
+		d := IndexData{
+			BgAnimationDuration: bgAnimationDurationSeconds,
+			BgAnimationDelay:    int(-time.Now().Unix() % bgAnimationDurationSeconds),
+		}
+		tmpl.Execute(w, d)
 	})
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

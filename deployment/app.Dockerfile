@@ -5,6 +5,13 @@ COPY . /app/
 RUN rmdir /app/deployment
 
 WORKDIR /app/pkg
+
+ENV GOPATH=/go:/app/pkg
+ENV GOBIN=$GOPATH/bin
+
+RUN apk add --no-cache git
+RUN go get -v .
+
 RUN mkdir /build
 RUN go build -v -o /build/app
 
