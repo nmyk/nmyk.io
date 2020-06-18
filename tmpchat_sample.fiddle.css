@@ -71,7 +71,6 @@ input, textarea, .messagelog {
 }
 
 .container, .messagelog {
-    display: table;
     text-align: left;
     margin-left: auto;
     margin-right: auto;
@@ -86,12 +85,13 @@ input, textarea, .messagelog {
 .messagelog {
     box-sizing: border-box;
     width: 100%;
+    height: 400px;
     padding: 10px;
+    overflow: auto;
 }
 
 .myname {
     float: right;
-    display: block;
     font-weight: bold;
     text-align: right;
     padding-left: 10px;
@@ -116,6 +116,11 @@ input, textarea, .messagelog {
     overflow: hidden;
     color: var(--alt-text-color);
     margin-bottom: 10px;
+}
+
+.systemmessage {
+    text-align: center;
+    font-weight: bold;
 }
 
 input[type="nametext"] {
