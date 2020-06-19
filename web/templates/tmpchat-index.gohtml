@@ -10,51 +10,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Nick Mykins is a software engineer and electronic musician based in New York City."/>
     <title>nmyk.io</title>
-
     <script>
-        window.addEventListener("load", function(evt) {
-            var output = document.getElementById("output");
-            var input = document.getElementById("input");
-            var ws;
-            var print = function(message) {
-                var d = document.createElement("div");
-                d.textContent = message;
-                output.appendChild(d);
-            };
-            ws = new WebSocket("ws://localhost:7070/")
-            ws.onopen = function(evt) {
-                ws.send("Nickoo has joined the chat")
-                print("OPEN");
-            }
-            ws.onclose = function(evt) {
-                print("CLOSE");
-                ws = null;
-            }
-            ws.onmessage = function(evt) {
-                print("RESPONSE: " + evt.data);
-            }
-            ws.onerror = function(evt) {
-                print("ERROR: " + evt.data);
-            }
-
-            document.getElementById("send").onclick = function(evt) {
-                if (!ws) {
-                    return false;
-                }
-                print("SEND: " + input.value);
-                ws.send(input.value);
-                return false;
-            };
-            document.getElementById("close").onclick = function(evt) {
-                if (!ws) {
-                    return false;
-                }
-                ws.close();
-                return false;
-            };
-        });
+        const getChannelUrl = channelName => "http://localhost:8081/" + channelName;
+        const uuidv4 = () => {
+            return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+                (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+            );
+        };
+        const hexToBase64 = hex => {
+            return btoa(hex.match(/\w{2}/g).map(function(a) {
+                return String.fromCharCode(parseInt(a, 16));
+            }).join(""));
+        };
+        const getNewChannel = () => hexToBase64(uuidv4().replace(/-/g, "")).replace(/=/g, "");
     </script>
-
 </head>
 
 <body style="
@@ -64,22 +33,17 @@
         animation-delay: {{.BgAnimationDelay}}s;">
 <div class="vspace50px"></div>
 <b>tmpchat</b>
-<div class="container" style="display: table;">
-    <table>
-        <tr><td valign="top" width="50%">
-                <p>Click "Open" to create a connection to the server,
-                    "Send" to send a message to the server and "Close" to close the connection.
-                    You can change the message and send multiple times.
-                <p>
-                    <form>
-                        <button id="close">Close</button>
-                <p><input id="input" type="text" value="Hello world!">
-                    <button id="send">Send</button>
-                    </form>
-            </td><td valign="top" width="50%">
-                <div id="output"></div>
-            </td></tr>
-    </table>
+<br>
+simple peer-to-peer text messaging
+<div class="container" style="display: table; text-align: center;">
+    <input type="button" value="create" onclick="window.location = getChannelUrl(getNewChannel());">
+    <br><br>
+    or
+    <br><br>
+    <form id="channel" method="get">
+        <input type="text" onchange="document.getElementById('channel').action = getChannelUrl(this.value);">
+        <input type="submit" value="go">
+    </form>
 </div>
 
 
