@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -13,20 +14,51 @@ import (
 // notice, it feels like discovering a hidden treat.
 const bgAnimationDurationSeconds = 400
 
-type IndexData struct {
+type BgData struct {
 	BgAnimationDuration int
 	BgAnimationDelay    int
 }
 
+type TmpchatData struct {
+	BgData
+	ChannelName string
+}
+
+func getTemplate(desc string) *template.Template {
+	return template.Must(template.ParseFiles(fmt.Sprintf("web/templates/%s.gohtml", desc)))
+}
+
 func main() {
-	tmpl := template.Must(template.ParseFiles("web/templates/index.gohtml"))
-	http.HandleFunc("/echo", echo)
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		d := IndexData{
-			BgAnimationDuration: bgAnimationDurationSeconds,
-			BgAnimationDelay:    int(-time.Now().Unix() % bgAnimationDurationSeconds),
+	websocketMux := http.NewServeMux()
+	websocketMux.HandleFunc("/", echo)
+	go func() {
+		log.Fatal(http.ListenAndServe(":7070", websocketMux))
+	}()
+
+	bg := BgData{
+		BgAnimationDuration: bgAnimationDurationSeconds,
+		BgAnimationDelay:    int(-time.Now().Unix() % bgAnimationDurationSeconds),
+	}
+
+	tmpchatMux := http.NewServeMux()
+	tmpchatMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		channelName := r.URL.Path[1:]
+		var tmpl *template.Template
+		if channelName == "" {
+			tmpl = getTemplate("tmpchat-index")
+		} else {
+			tmpl = getTemplate("tmpchat-channel")
 		}
-		tmpl.Execute(w, d)
+		tmpl.Execute(w, TmpchatData{bg, channelName})
 	})
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	go func() {
+		log.Fatal(http.ListenAndServe(":8081", tmpchatMux))
+	}()
+
+	nmykMux := http.NewServeMux()
+	nmykMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		tmpl := getTemplate("index")
+		tmpl.Execute(w, bg)
+	})
+	log.Fatal(http.ListenAndServe(":8080", nmykMux))
 }

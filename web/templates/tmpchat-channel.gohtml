@@ -1,0 +1,55 @@
+<html>
+<head>
+    <link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet">
+    <link href="https://cdn.nmyk.io/assets/style-new.css" rel="stylesheet">
+    <link href="https://cdn.nmyk.io/assets/favicon.ico" rel="icon">
+    <script type="text/javascript" src="https://cdn.nmyk.io/assets/email_address.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Nick Mykins is a software engineer and electronic musician based in New York City."/>
+    <title>nmyk.io</title>
+</head>
+
+<body style="
+        -webkit-animation-duration: {{.BgAnimationDuration}}s;
+        -moz-animation-duration: {{.BgAnimationDuration}}s;
+        animation-duration: {{.BgAnimationDuration}}s;
+        animation-delay: {{.BgAnimationDelay}}s;">
+<div class="vspace50px"></div>
+<b>tmpchat</b>
+<br>
+#{{.ChannelName}}
+
+<div class="container" style="width: 80%;">
+    <div class="messagelog">
+
+    </div>
+
+    <div style="margin-top: 2px; margin-bottom: 10px;">
+        <div style="width: 85%; float: left;">
+            online: <input type="nametext" size=10 maxlength=16 value=anon-00>
+        </div>
+        <div style="float: right;">
+            <input type="submit" value="clear">
+        </div>
+    </div>
+
+    <br><br>
+
+    <form>
+        <div class="messagetextcontainer">
+            <textarea rows=1 id="messagetext"></textarea>
+        </div>
+
+        <div style="float: right;">
+            <input type="submit" value="send">
+        </div>
+    </form>
+
+    <br>
+
+    <div style="text-align: center;">connected</div>
+</div>
+</body>
+
+</html>

@@ -15,7 +15,9 @@ develop:
 		run -d \
 		--volume $(shell pwd)/pkg:/app/pkg \
 		--volume $(shell pwd)/web:/app/web \
+		--publish 7070:7070 \
 		--publish 8080:8080 \
+		--publish 8081:8081 \
 		--name app-dev \
 		--entrypoint /bin/sh app \
 		-c 'while sleep 3600; do :; done'
