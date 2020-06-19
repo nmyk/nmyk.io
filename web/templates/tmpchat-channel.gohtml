@@ -10,29 +10,31 @@
     <title>nmyk.io</title>
     <script>
         window.addEventListener("load", function(evt) {
-            var output = document.getElementById("output");
-            var input = document.getElementById("input");
+            var messageLog = document.getElementById("messagelog");
+            var input = document.getElementById("messagetext");
             var ws;
             var print = function(message) {
                 var d = document.createElement("div");
+                d.className = "systemmessage"
                 d.textContent = message;
-                output.appendChild(d);
+                messageLog.appendChild(d);
             };
-            ws = new WebSocket("ws://localhost:7070/")
+            ws = new WebSocket("ws://localhost:7070/");
             ws.onopen = function(evt) {
-                ws.send("Nickoo has joined the chat")
+                ws.send(window.location.pathname.substr(1));
+                ws.send(document.getElementById("myname").value);
                 print("OPEN");
-            }
+            };
             ws.onclose = function(evt) {
                 print("CLOSE");
                 ws = null;
-            }
+            };
             ws.onmessage = function(evt) {
                 print("RESPONSE: " + evt.data);
-            }
+            };
             ws.onerror = function(evt) {
                 print("ERROR: " + evt.data);
-            }
+            };
 
             document.getElementById("send").onclick = function(evt) {
                 if (!ws) {
@@ -40,13 +42,6 @@
                 }
                 print("SEND: " + input.value);
                 ws.send(input.value);
-                return false;
-            };
-            document.getElementById("close").onclick = function(evt) {
-                if (!ws) {
-                    return false;
-                }
-                ws.close();
                 return false;
             };
         });
@@ -64,13 +59,10 @@
 #{{.ChannelName}}
 
 <div class="container" style="width: 80%;">
-    <div class="messagelog">
-
-    </div>
-
+    <div class="messagelog" id="messagelog"></div>
     <div style="margin-top: 2px; margin-bottom: 10px;">
         <div style="width: 85%; float: left;">
-            online: <input type="nametext" size=10 maxlength=16 value=anon-00>
+            online: <input type="nametext" id="myname" size=10 maxlength=16 value=anon-00>
         </div>
         <div style="float: right;">
             <input type="submit" value="clear">
@@ -85,7 +77,7 @@
         </div>
 
         <div style="float: right;">
-            <input type="submit" value="send">
+            <input type="submit" id="send" value="send">
         </div>
     </form>
 
@@ -93,18 +85,6 @@
 
     <div style="text-align: center;">connected</div>
 </div>
-<div class="vspace50px"></div><div class="vspace50px"></div>
-<table>
-    <tr><td valign="top" width="50%">
-            <form>
-                <button id="close">Close</button>
-                <p><input id="input" type="text" value="Hello world!">
-                    <button id="send">Send</button>
-            </form>
-        </td><td valign="top" width="50%">
-            <div id="output"></div>
-        </td></tr>
-</table>
 </body>
 
 </html>
