@@ -31,6 +31,10 @@ func getTemplate(desc string) *template.Template {
 
 func getBgData() BgData {
 	return BgData{
+		// If you do this on the frontend, users see a split second of the background at
+		// 0s delay before it updates. This way the background looks the same for everyone
+		// _and_ there are no visible transient states that make the site look cheap while
+		// it's loading. If I didn't care, I'd just use Squarespace ;)
 		BgAnimationDuration: bgAnimationDurationSeconds,
 		BgAnimationDelay:    int(-time.Now().Unix() % bgAnimationDurationSeconds),
 	}
@@ -46,7 +50,7 @@ func main() {
 	tmpchatMux := http.NewServeMux()
 	tmpchatMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		log.Print(r.Host)
-		channelName := r.URL.Path[1:]
+		channelName := r.URL.Path[1:] // Omit leading slash in path
 		var tmpl *template.Template
 		if channelName == "" {
 			tmpl = getTemplate("tmpchat-index")

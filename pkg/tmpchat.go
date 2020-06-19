@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"net/http"
-	"net/url"
 
 	"github.com/gorilla/websocket"
 )
@@ -39,13 +38,8 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println("read:", err)
 			break
 		}
-		rawMessage, err := url.QueryUnescape(string(message))
-		if err != nil {
-			log.Println("unescape:", err)
-			break
-		}
-		log.Printf("recv: %s", rawMessage)
-		err = c.WriteMessage(mt, []byte(rawMessage))
+		log.Printf("recv: %s", message)
+		err = c.WriteMessage(mt, message)
 		if err != nil {
 			log.Println("write:", err)
 			break

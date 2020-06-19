@@ -5,7 +5,7 @@
     <link href="https://cdn.nmyk.io/assets/favicon.ico" rel="icon">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Nick Mykins is a software engineer and electronic musician based in New York City."/>
+    <meta name="description" content="tmpchat is a WebRTC-based group text messaging application designed and built by Nick Mykins (nmyk.io)"/>
     <title>tmpch.at - {{.ChannelName}}</title>
     <script>
         window.addEventListener("load", function(event) {
@@ -22,7 +22,7 @@
             };
             ws = new WebSocket("ws://localhost:7070/");
             ws.onopen = function(event) {
-                ws.send(window.location.pathname.substr(1));
+                ws.send(unescape(window.location.pathname.substr(1))); // substr to omit leading slash
                 ws.send(document.getElementById("myname").value);
                 print("OPEN");
             };
@@ -31,14 +31,23 @@
                 ws = null;
             };
             ws.onmessage = function(event) {
-                print("RESPONSE: " + event.data);
+                print("SERVER: " + event.data);
             };
             ws.onerror = function(event) {
                 print("ERROR: " + event.data);
             };
 
+            let doubleEnterTs; // Clear chat by double-pressing Enter with no text in the input field
             input.onkeypress = function(event) {
-                if(event.key === "Enter" && !event.shiftKey){
+                if(event.key === "Enter" && !event.shiftKey) {
+                    if (input.value === "" && (Date.now() - doubleEnterTs < 150)) {
+                        document.getElementById("clear").click();
+                        return false;
+                    }
+                    if (input.value === "") {
+                        doubleEnterTs = Date.now();
+                        return false;
+                    }
                     document.getElementById("send").click();
                     event.preventDefault(); // Prevents the addition of a new line in the text field (not needed in a lot of cases)
                 }
@@ -46,6 +55,9 @@
 
             document.getElementById("send").onclick = function(event) {
                 if (!ws) {
+                    return false;
+                }
+                if (input.value === "") {
                     return false;
                 }
                 print("SEND: " + input.value);
