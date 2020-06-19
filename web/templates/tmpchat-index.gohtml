@@ -17,15 +17,15 @@
                 (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
             );
         };
-        const hexToBase64 = hex => {
+        const hexToBase64URL = hex => {
             return btoa(hex.match(/\w{2}/g).map(function(a) {
                 return String.fromCharCode(parseInt(a, 16));
-            }).join(""));
+            }).join("")).replace(/[=+\/]/g, function (c) {return {"+": "-", "/": "_", "=": ""}[c]});
         };
-        // Start a new chat whose ChannelName is an RFC-4648 base64url encoded v4 UUID,
-        // without padding. This ensures that the channel will be unique, at least
-        // insofar as UUIDs are unique. (which is inso-extremely-far)
-        const newChannelName = () => hexToBase64(uuidv4().replace(/-/g, "")).replace(/[=+\/]/g, function (c) {return {"+": "-", "/": "_", "=": ""}[c]});
+        // Start a new chat whose ChannelName is an RFC-4648 base64url encoded v4 UUID without
+        // hyphens. This ensures that the channel will be will be unique, at least insofar as
+        // UUIDs are unique. Which is inso-extremely-far.
+        const newChannelName = () => hexToBase64URL(uuidv4().replace(/-/g, ""));
         // Otherwise you can pick whatever channel you want.
         const setDestChannel = () => document.getElementById('channel').action = getChannelUrl(escape(document.getElementById("channelnameinput").value));
     </script>
@@ -37,15 +37,14 @@
         animation-duration: {{.BgAnimationDuration}}s;
         animation-delay: {{.BgAnimationDelay}}s;">
 <div class="vspace50px"></div>
-<b>tmpchat</b>
-<br>
+<b>tmpchat</b><br>
 simple peer-to-peer text messaging
-<div class="container" style="display: table; text-align: center;">
+<div class="container" style="text-align: center;">
     <input type="button" value="create" onclick="window.location = getChannelUrl(newChannelName());">
     <br><br>
     or
     <br><br>
-    <form id="channel" method="get">
+    <form id="channel" method="get" autocomplete="off">
         <input id="channelnameinput" type="text" onchange="setDestChannel()">
         <input type="submit" value="go">
     </form>

@@ -8,33 +8,74 @@
     <meta name="description" content="tmpchat is a WebRTC-based group text messaging application designed and built by Nick Mykins (nmyk.io)"/>
     <title>tmpch.at - {{.ChannelName}}</title>
     <script>
+        const uuidv4 = () => {
+            return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+                (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+            );
+        };
+        const newSignalingEvent = function(type, data) {
+            return JSON.stringify({
+            "channel_name": unescape(window.location.pathname.substr(1)),
+            "from_user": {"id": myUserId, "name": document.getElementById("myname").value},
+            "type": type,
+            "data": data
+            });
+        };
+        const nameTag = function (name, isMe) {
+            if (isMe) {return " " + name + " • "}
+            else { return " • " + name + " "}
+        };
+        const myUserId = uuidv4();
         window.addEventListener("load", function(event) {
-            let messageLog = document.getElementById("messagelog");
+            const messageLog = document.getElementById("messagelog");
             const input = document.getElementById("messagetext");
-            let ws;
-            const print = function(message) {
-                let d = document.createElement("div");
-                d.className = "systemmessage";
-                p = document.createElement("pre");
-                p.textContent = message;
-                d.appendChild(p);
-                messageLog.appendChild(d);
+
+            const printSystem = function(eventdata) {
+                let message = document.createElement("div");
+                message.className = "systemmessage";
+                message.textContent = eventdata;
+                messageLog.appendChild(message);
+                if (document.activeElement === input) {
+                    messageLog.scrollTop = messageLog.scrollHeight;
+                }
             };
-            ws = new WebSocket("ws://localhost:7070/");
+
+            const print = function(message) {
+                let name = document.createElement("div");
+                name.className = "myname";
+                name.textContent = nameTag(document.getElementById("myname").value);
+                let msg = document.createElement("div");
+                msg.className = "mymessage";
+                let pre = document.createElement("pre");
+                pre.textContent = message;
+                msg.appendChild(pre);
+                messageLog.appendChild(msg);
+                msg.insertAdjacentHTML("afterBegin", name.outerHTML);
+                console.log(msg.outerHTML);
+                if (document.activeElement === input) {
+                   messageLog.scrollTop = messageLog.scrollHeight;
+                }
+            };
+            let ws = new WebSocket("ws://localhost:7070/");
             ws.onopen = function(event) {
-                ws.send(unescape(window.location.pathname.substr(1))); // substr to omit leading slash
-                ws.send(document.getElementById("myname").value);
-                print("OPEN");
+                ws.send(newSignalingEvent(0, null));
             };
             ws.onclose = function(event) {
                 print("CLOSE");
                 ws = null;
             };
             ws.onmessage = function(event) {
-                print("SERVER: " + event.data);
+                let message = (JSON.parse(event.data)).data
+                if (!message.user) {
+                    printSystem(message);
+                }
             };
             ws.onerror = function(event) {
                 print("ERROR: " + event.data);
+            };
+
+            input.onfocus = function(event) {
+                messageLog.scrollTop = messageLog.scrollHeight;
             };
 
             let doubleEnterTs; // Clear chat by double-pressing Enter with no text in the input field
@@ -60,8 +101,7 @@
                 if (input.value === "") {
                     return false;
                 }
-                print("SEND: " + input.value);
-                ws.send(input.value);
+                print(input.value);
                 document.getElementById("messagetext").value = "";
                 return false;
             };
@@ -85,7 +125,7 @@
         animation-duration: {{.BgAnimationDuration}}s;
         animation-delay: {{.BgAnimationDelay}}s;">
 <div class="vspace50px"></div>
-<b>tmpchat</b>
+<a href="http://localhost:8081" type="home">tmpchat</a>
 <br>
 #{{.ChannelName}}
 

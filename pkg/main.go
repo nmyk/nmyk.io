@@ -46,7 +46,6 @@ func main() {
 	go func() {
 		log.Fatal(http.ListenAndServe(":7070", signalingMux))
 	}()
-
 	tmpchatMux := http.NewServeMux()
 	tmpchatMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		log.Print(r.Host)

@@ -64,7 +64,7 @@ div.vspace50px {
     height: 50px;
 }
 
-input, textarea, .messagelog {
+input, textarea, button, .messagelog {
     background: none;
     border: 1px solid var(--main-text-color);
     border-radius: 4px;
@@ -77,6 +77,7 @@ input, textarea, .messagelog {
 }
 
 .container {
+    display: table;
     min-width: 360px;
     max-width: 600px;
     padding: 30px;
@@ -104,14 +105,14 @@ input, textarea, .messagelog {
     padding-right: 10px;
 }
 
-.mymessage {
+.mymessage pre {
     text-align: right;
     overflow: hidden;
     color: var(--alt-text-color);
     margin-bottom: 10px;
 }
 
-.theirmessage {
+.theirmessage pre {
     text-align: left;
     overflow: hidden;
     color: var(--alt-text-color);
@@ -130,13 +131,12 @@ input[type="nametext"] {
 
 textarea#messagetext {
     padding-left: 10px;
-    line-height: 21px;
     width: 100%;
     resize: vertical;
 }
 
 .messagetextcontainer {
-    width: calc(100% - 66px);
+    width: calc(100% - 56px);
     float: left;
 }
 
@@ -156,6 +156,12 @@ a {
 a:hover {
     color: var(--alt-text-color);
     text-decoration: underline;
+}
+
+a[type="home"], a[type="home"]:hover {
+    color: var(--main-text-color);
+    font-weight: bold;
+    text-decoration: none;
 }
 
 .keys {
