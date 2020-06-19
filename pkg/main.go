@@ -22,6 +22,7 @@ type BgData struct {
 type TmpchatData struct {
 	BgData
 	ChannelName string
+	AppHost     string // So this works seamlessly in dev (localhost) and prod (tmpch.at)
 }
 
 func getTemplate(desc string) *template.Template {
@@ -36,14 +37,15 @@ func getBgData() BgData {
 }
 
 func main() {
-	websocketMux := http.NewServeMux()
-	websocketMux.HandleFunc("/", echo)
+	signalingMux := http.NewServeMux()
+	signalingMux.HandleFunc("/", signalingHandler)
 	go func() {
-		log.Fatal(http.ListenAndServe(":7070", websocketMux))
+		log.Fatal(http.ListenAndServe(":7070", signalingMux))
 	}()
 
 	tmpchatMux := http.NewServeMux()
 	tmpchatMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		log.Print(r.Host)
 		channelName := r.URL.Path[1:]
 		var tmpl *template.Template
 		if channelName == "" {
@@ -51,7 +53,8 @@ func main() {
 		} else {
 			tmpl = getTemplate("tmpchat-channel")
 		}
-		tmpl.Execute(w, TmpchatData{getBgData(), channelName})
+		d := TmpchatData{getBgData(), channelName, r.Host}
+		tmpl.Execute(w, d)
 	})
 	go func() {
 		log.Fatal(http.ListenAndServe(":8081", tmpchatMux))

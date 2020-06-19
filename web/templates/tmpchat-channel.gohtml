@@ -3,47 +3,66 @@
     <link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet">
     <link href="https://cdn.nmyk.io/assets/style-new.css" rel="stylesheet">
     <link href="https://cdn.nmyk.io/assets/favicon.ico" rel="icon">
-    <script type="text/javascript" src="https://cdn.nmyk.io/assets/email_address.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Nick Mykins is a software engineer and electronic musician based in New York City."/>
-    <title>nmyk.io</title>
+    <title>tmpch.at - {{.ChannelName}}</title>
     <script>
-        window.addEventListener("load", function(evt) {
-            var messageLog = document.getElementById("messagelog");
-            var input = document.getElementById("messagetext");
-            var ws;
-            var print = function(message) {
-                var d = document.createElement("div");
-                d.className = "systemmessage"
-                d.textContent = message;
+        window.addEventListener("load", function(event) {
+            let messageLog = document.getElementById("messagelog");
+            const input = document.getElementById("messagetext");
+            let ws;
+            const print = function(message) {
+                let d = document.createElement("div");
+                d.className = "systemmessage";
+                p = document.createElement("pre");
+                p.textContent = message;
+                d.appendChild(p);
                 messageLog.appendChild(d);
             };
             ws = new WebSocket("ws://localhost:7070/");
-            ws.onopen = function(evt) {
+            ws.onopen = function(event) {
                 ws.send(window.location.pathname.substr(1));
                 ws.send(document.getElementById("myname").value);
                 print("OPEN");
             };
-            ws.onclose = function(evt) {
+            ws.onclose = function(event) {
                 print("CLOSE");
                 ws = null;
             };
-            ws.onmessage = function(evt) {
-                print("RESPONSE: " + evt.data);
+            ws.onmessage = function(event) {
+                print("RESPONSE: " + event.data);
             };
-            ws.onerror = function(evt) {
-                print("ERROR: " + evt.data);
+            ws.onerror = function(event) {
+                print("ERROR: " + event.data);
             };
 
-            document.getElementById("send").onclick = function(evt) {
+            input.onkeypress = function(event) {
+                if(event.key === "Enter" && !event.shiftKey){
+                    document.getElementById("send").click();
+                    event.preventDefault(); // Prevents the addition of a new line in the text field (not needed in a lot of cases)
+                }
+            };
+
+            document.getElementById("send").onclick = function(event) {
                 if (!ws) {
                     return false;
                 }
                 print("SEND: " + input.value);
                 ws.send(input.value);
+                document.getElementById("messagetext").value = "";
                 return false;
             };
+
+            document.getElementById("clear").onclick = function(event) {
+                let node = document.getElementById("messagelog");
+                while (node.firstChild) {
+                    node.removeChild(node.firstChild);
+                }
+                document.getElementById("messagetext").focus();
+                return false;
+            };
+            document.getElementById("messagetext").focus();
         });
     </script>
 </head>
@@ -65,13 +84,13 @@
             online: <input type="nametext" id="myname" size=10 maxlength=16 value=anon-00>
         </div>
         <div style="float: right;">
-            <input type="submit" value="clear">
+            <input type="submit" id="clear" value="clear">
         </div>
     </div>
 
     <br><br>
 
-    <form>
+    <form id="message">
         <div class="messagetextcontainer">
             <textarea rows=1 id="messagetext"></textarea>
         </div>

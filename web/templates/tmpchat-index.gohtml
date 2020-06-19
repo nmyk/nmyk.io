@@ -8,10 +8,10 @@
     <script type="text/javascript" src="https://cdn.nmyk.io/assets/email_address.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Nick Mykins is a software engineer and electronic musician based in New York City."/>
-    <title>nmyk.io</title>
+    <meta name="description" content="tmpchat is a WebRTC-based group text messaging application designed and built by Nick Mykins (nmyk.io)"/>
+    <title>tmpchat</title>
     <script>
-        const getChannelUrl = channelName => "http://localhost:8081/" + channelName;
+        const getChannelUrl = channelName => "http://{{.AppHost}}/" + channelName;
         const uuidv4 = () => {
             return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
                 (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
@@ -22,7 +22,12 @@
                 return String.fromCharCode(parseInt(a, 16));
             }).join(""));
         };
-        const getNewChannel = () => hexToBase64(uuidv4().replace(/-/g, "")).replace(/=/g, "");
+        // Start a new chat whose ChannelName is an RFC-4648 base64url encoded v4 UUID,
+        // without padding. This ensures that the channel will be unique, at least
+        // insofar as UUIDs are unique. (which is inso-extremely-far)
+        const newChannelName = () => hexToBase64(uuidv4().replace(/-/g, "")).replace(/[=+\/]/g, function (c) {return {"+": "-", "/": "_", "=": ""}[c]});
+        // Otherwise you can pick whatever channel you want.
+        const setDestChannel = () => document.getElementById('channel').action = getChannelUrl(escape(document.getElementById("channelnameinput").value));
     </script>
 </head>
 
@@ -36,12 +41,12 @@
 <br>
 simple peer-to-peer text messaging
 <div class="container" style="display: table; text-align: center;">
-    <input type="button" value="create" onclick="window.location = getChannelUrl(getNewChannel());">
+    <input type="button" value="create" onclick="window.location = getChannelUrl(newChannelName());">
     <br><br>
     or
     <br><br>
     <form id="channel" method="get">
-        <input type="text" onchange="document.getElementById('channel').action = getChannelUrl(this.value);">
+        <input id="channelnameinput" type="text" onchange="setDestChannel()">
         <input type="submit" value="go">
     </form>
 </div>
