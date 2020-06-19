@@ -28,17 +28,19 @@ func getTemplate(desc string) *template.Template {
 	return template.Must(template.ParseFiles(fmt.Sprintf("web/templates/%s.gohtml", desc)))
 }
 
+func getBgData() BgData {
+	return BgData{
+		BgAnimationDuration: bgAnimationDurationSeconds,
+		BgAnimationDelay:    int(-time.Now().Unix() % bgAnimationDurationSeconds),
+	}
+}
+
 func main() {
 	websocketMux := http.NewServeMux()
 	websocketMux.HandleFunc("/", echo)
 	go func() {
 		log.Fatal(http.ListenAndServe(":7070", websocketMux))
 	}()
-
-	bg := BgData{
-		BgAnimationDuration: bgAnimationDurationSeconds,
-		BgAnimationDelay:    int(-time.Now().Unix() % bgAnimationDurationSeconds),
-	}
 
 	tmpchatMux := http.NewServeMux()
 	tmpchatMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -49,7 +51,7 @@ func main() {
 		} else {
 			tmpl = getTemplate("tmpchat-channel")
 		}
-		tmpl.Execute(w, TmpchatData{bg, channelName})
+		tmpl.Execute(w, TmpchatData{getBgData(), channelName})
 	})
 	go func() {
 		log.Fatal(http.ListenAndServe(":8081", tmpchatMux))
@@ -58,7 +60,7 @@ func main() {
 	nmykMux := http.NewServeMux()
 	nmykMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		tmpl := getTemplate("index")
-		tmpl.Execute(w, bg)
+		tmpl.Execute(w, getBgData())
 	})
 	log.Fatal(http.ListenAndServe(":8080", nmykMux))
 }
