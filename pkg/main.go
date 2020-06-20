@@ -19,12 +19,6 @@ type BgData struct {
 	BgAnimationDelay    int
 }
 
-type TmpchatData struct {
-	BgData
-	ChannelName string
-	AppHost     string // So this works seamlessly in dev (localhost) and prod (tmpch.at)
-}
-
 func getTemplate(desc string) *template.Template {
 	return template.Must(template.ParseFiles(fmt.Sprintf("web/templates/%s.gohtml", desc)))
 }
@@ -48,18 +42,7 @@ func main() {
 	}()
 
 	tmpchatMux := http.NewServeMux()
-	tmpchatMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		log.Print(r.Host)
-		channelName := r.URL.Path[1:] // Omit leading slash in path
-		var tmpl *template.Template
-		if channelName == "" {
-			tmpl = getTemplate("tmpchat-index")
-		} else {
-			tmpl = getTemplate("tmpchat-channel")
-		}
-		d := TmpchatData{getBgData(), channelName, r.Host}
-		tmpl.Execute(w, d)
-	})
+	tmpchatMux.HandleFunc("/", tmpchatHandler)
 	go func() {
 		log.Fatal(http.ListenAndServe(":8081", tmpchatMux))
 	}()
