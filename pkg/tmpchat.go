@@ -18,32 +18,21 @@ type Channel struct {
 	Messages    chan *Message
 }
 
+func NewChannel() (*Channel, *User) {
+	user := &User{uuid.New().String(), "anon_0"}
+	conn := &Connection{nil, user}
+	messages := make(chan *Message)
+	c := &Channel{
+		Connections: []*Connection{conn},
+		Messages:    messages,
+	}
+	go c.Start()
+	return c, user
+}
+
 func (c *Channel) Start() {
 	for m := range c.Messages {
-		switch t := m.Type; t {
-		case ENTRANCE:
-			text := fmt.Sprintf("<span class=\"%s\">%s</span> joined", m.FromUser.ID, m.FromUser.Name)
-			announcement := &Message{
-				wsMsgType:   m.wsMsgType,
-				ChannelName: m.ChannelName,
-				FromUser:    nil,
-				Type:        ENTRANCE,
-				Text:        text,
-			}
-			c.Broadcast(announcement)
-		case EXIT:
-			text := fmt.Sprintf("<span class=\"%s\">%s</span> left", m.FromUser.ID, m.FromUser.Name)
-			announcement := &Message{
-				wsMsgType:   m.wsMsgType,
-				ChannelName: m.ChannelName,
-				FromUser:    nil,
-				Type:        EXIT,
-				Text:        text,
-			}
-			c.Broadcast(announcement)
-		case NAME_CHANGE, CLEAR:
-			c.Broadcast(m)
-		}
+		c.Broadcast(m)
 	}
 }
 
@@ -100,7 +89,7 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 	var channelName string
 	for {
 		mt, rawSignal, err := c.ReadMessage()
-		if err != nil && channelName != "" {
+		if err != nil {
 			log.Println("read:", err)
 			break
 		}
@@ -121,49 +110,42 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if message.Type == EXIT && len(Tmpchat[channelName].Connections) == 1 {
-			// Last user out should turn off the lights to prevent a goroutine leak.
+			// Last user out should turn off the lights to prevent a memory leak.
 			close(Tmpchat[channelName].Messages)
 			delete(Tmpchat, channelName)
+			log.Println(fmt.Sprintf("removed empty channel %s", channelName))
+			break
 		}
 		message.wsMsgType = mt
 		Tmpchat[channelName].Messages <- message
 	}
 }
 
-type TmpchatData struct {
+type TmpchatPageData struct {
 	BgData
 	ChannelName string
-	User        User
+	User        *User
 	AppHost     string // So this works seamlessly in dev (localhost) and prod (tmpch.at)
 }
 
 func tmpchatHandler(w http.ResponseWriter, r *http.Request) {
-	log.Print(r.Host)
 	channelName := r.URL.Path[1:] // Omit leading slash in path
 	var tmpl *template.Template
-	var user User
+	var newUser *User
 	if channelName == "" {
 		tmpl = getTemplate("tmpchat-index")
 	} else {
 		tmpl = getTemplate("tmpchat-channel")
-		user = User{
-			ID:   uuid.New().String(),
-			Name: "anon_00", //TODO: some kind of name initialization. maybe just autoincrementing anon_XX
-		}
 		if _, ok := Tmpchat[channelName]; !ok {
-			conn := &Connection{nil, &user}
-			messages := make(chan *Message)
-			channel := Channel{
-				Connections: []*Connection{conn},
-				Messages:    messages,
-			}
-			Tmpchat[channelName] = &channel
-			go channel.Start()
+			channel, u := NewChannel()
+			newUser = u
+			Tmpchat[channelName] = channel
 		} else {
-			conn := &Connection{nil, &user}
+			newUser = &User{uuid.New().String(), fmt.Sprintf("anon_%d", len(Tmpchat[channelName].Connections))}
+			conn := &Connection{nil, newUser}
 			Tmpchat[channelName].Connections = append(Tmpchat[channelName].Connections, conn)
 		}
 	}
-	d := TmpchatData{getBgData(), channelName, user, r.Host}
+	d := TmpchatPageData{getBgData(), channelName, newUser, r.Host}
 	tmpl.Execute(w, d)
 }

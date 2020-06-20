@@ -54,6 +54,19 @@
             return message["from_user"]["id"] === lastMsgUserId;
         };
 
+        const doEntrance = message => {
+            if (message["from_user"]["id"] !== myUserId) {
+                let name = `<span class="${message["from_user"]["id"]}"><pre style="display: inline;">${SEPARATOR}${message["from_user"]["name"]}</pre></span>`;
+                document.getElementById("namechanger").innerHTML += name
+            }
+        };
+
+        const doExit = message => {
+            if (message["from_user"]["id"] !== myUserId) {
+                document.getElementById("namechanger").getElementsByClassName(message["from_user"]["id"])[0].outerHTML = "";
+            }
+        };
+
         const doClear = () => {
             let node = document.getElementById("messagelog");
             while (node.firstChild) {
@@ -69,20 +82,24 @@
             }
         };
 
+        const whoami = () => document.getElementById("myname").value;
+
         const myUserId = "{{.User.ID}}";
 
         window.addEventListener("load", function(event) {
             const messageLog = document.getElementById("messagelog");
             const input = document.getElementById("messagetext");
 
+            const announce = message => {
+                let announcement = document.createElement("div");
+                announcement.className = "systemmessage";
+                announcement.innerHTML = message.text;
+                messageLog.appendChild(announcement);
+            };
+
             const write = message => {
                 const lastMsgElement = messageLog.lastElementChild;
-                if (!message["from_user"]) { // System message for all users
-                    let sysmsg = document.createElement("div");
-                    sysmsg.className = "systemmessage";
-                    sysmsg.innerHTML = message.text;
-                    messageLog.appendChild(sysmsg);
-                } else if (shouldStackMsg(message, lastMsgElement)) {
+                if (shouldStackMsg(message, lastMsgElement)) {
                     let currentText = lastMsgElement.getElementsByClassName("pre")[0];
                     currentText.textContent = currentText.textContent + "\n" + message["text"];
                 } else {
@@ -109,24 +126,33 @@
             let ws = new WebSocket("ws://localhost:7070/");
 
             ws.onopen = () => {
-                ws.send(JSON.stringify(newMessage(SignalingEvent.ENTRANCE, null)));
+                let text = `<span class="${myUserId}">${whoami()}</span> joined`;
+                ws.send(JSON.stringify(newMessage(SignalingEvent.ENTRANCE, text)));
             };
 
-            ws.onclose = () => {
-                ws.send(JSON.stringify(newMessage(SignalingEvent.EXIT, null)));
-                ws = null;
+            window.onbeforeunload = () => {
+                let text = `<span class="${myUserId}">${whoami()}</span> left`;
+                ws.send(JSON.stringify(newMessage(SignalingEvent.EXIT, text)));
+                ws.close();
             };
 
             ws.onmessage = event => {
                 let message = JSON.parse(event.data);
                 switch (message.type) {
+                    case SignalingEvent.ENTRANCE:
+                        doEntrance(message);
+                        announce(message);
+                        break;
+                    case SignalingEvent.EXIT:
+                        doExit(message);
+                        announce(message);
+                        break;
                     case SignalingEvent.NAME_CHANGE:
                         doNameChange(message);
                         break;
                     case SignalingEvent.CLEAR:
                         doClear();
                         break;
-                    default: write(message);
                 }
             };
 
