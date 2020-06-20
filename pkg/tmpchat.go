@@ -18,6 +18,45 @@ type Channel struct {
 	Messages    chan *Message
 }
 
+func (c *Channel) Start() {
+	for m := range c.Messages {
+		switch t := m.Type; t {
+		case ENTRANCE:
+			text := fmt.Sprintf("<span class=\"%s\">%s</span> joined", m.FromUser.ID, m.FromUser.Name)
+			announcement := &Message{
+				wsMsgType:   m.wsMsgType,
+				ChannelName: m.ChannelName,
+				FromUser:    nil,
+				Type:        ENTRANCE,
+				Text:        text,
+			}
+			c.Broadcast(announcement)
+		case EXIT:
+			text := fmt.Sprintf("<span class=\"%s\">%s</span> left", m.FromUser.ID, m.FromUser.Name)
+			announcement := &Message{
+				wsMsgType:   m.wsMsgType,
+				ChannelName: m.ChannelName,
+				FromUser:    nil,
+				Type:        EXIT,
+				Text:        text,
+			}
+			c.Broadcast(announcement)
+		case NAME_CHANGE, CLEAR:
+			c.Broadcast(m)
+		}
+	}
+}
+
+func (c *Channel) Broadcast(m *Message) {
+	out, _ := json.Marshal(m)
+	for _, conn := range c.Connections {
+		err := conn.WriteMessage(m.wsMsgType, out)
+		if err != nil {
+			log.Println("write:", err)
+		}
+	}
+}
+
 type Connection struct {
 	*websocket.Conn
 	User *User
@@ -46,18 +85,6 @@ const (
 	CLEAR
 )
 
-func getEntranceMessage(i *Message) []byte {
-	text := fmt.Sprintf("<span class=\"%s\">%s</span> joined", i.FromUser.ID, i.FromUser.Name)
-	o := Message{
-		ChannelName: i.ChannelName,
-		FromUser:    nil,
-		Type:        ENTRANCE,
-		Text:        text,
-	}
-	resp, _ := json.Marshal(o)
-	return resp
-}
-
 func signalingHandler(w http.ResponseWriter, r *http.Request) {
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(*http.Request) bool {
@@ -69,11 +96,11 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 		log.Print("upgrade:", err)
 		return
 	}
-	channelName := r.URL.Path[1:]
 	// Unmarshal all my messages and send them to the channel
+	var channelName string
 	for {
 		mt, rawSignal, err := c.ReadMessage()
-		if err != nil {
+		if err != nil && channelName != "" {
 			log.Println("read:", err)
 			break
 		}
@@ -81,6 +108,22 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 		message := &Message{}
 		if err := json.Unmarshal(rawSignal, message); err != nil {
 			continue
+		}
+		channelName = message.ChannelName
+		if message.Type == ENTRANCE {
+			// First msg from this user. Need to associate the connection with the UserId.
+			userID := message.FromUser.ID
+			for i, conn := range Tmpchat[channelName].Connections {
+				if conn.User.ID == userID {
+					Tmpchat[channelName].Connections[i].Conn = c
+					break
+				}
+			}
+		}
+		if message.Type == EXIT && len(Tmpchat[channelName].Connections) == 1 {
+			// Last user out should turn off the lights to prevent a goroutine leak.
+			close(Tmpchat[channelName].Messages)
+			delete(Tmpchat, channelName)
 		}
 		message.wsMsgType = mt
 		Tmpchat[channelName].Messages <- message
@@ -102,30 +145,23 @@ func tmpchatHandler(w http.ResponseWriter, r *http.Request) {
 	if channelName == "" {
 		tmpl = getTemplate("tmpchat-index")
 	} else {
+		tmpl = getTemplate("tmpchat-channel")
 		user = User{
-			uuid.New().String(),
-			"anon-00",
+			ID:   uuid.New().String(),
+			Name: "anon_00", //TODO: some kind of name initialization. maybe just autoincrementing anon_XX
 		}
 		if _, ok := Tmpchat[channelName]; !ok {
 			conn := &Connection{nil, &user}
 			messages := make(chan *Message)
-			Tmpchat[channelName] = &Channel{
+			channel := Channel{
 				Connections: []*Connection{conn},
 				Messages:    messages,
 			}
-			go func() { // Receive messages from channel and propagate to all users
-				for m := range Tmpchat[channelName].Messages {
-					switch t := m.Type; t {
-					case ENTRANCE:
-						err := c.WriteMessage(m.wsMsgType, getEntranceMessage(m))
-						if err != nil {
-							log.Println("write:", err)
-							break
-						}
-					}
-				}
-			}()
-			tmpl = getTemplate("tmpchat-channel")
+			Tmpchat[channelName] = &channel
+			go channel.Start()
+		} else {
+			conn := &Connection{nil, &user}
+			Tmpchat[channelName].Connections = append(Tmpchat[channelName].Connections, conn)
 		}
 	}
 	d := TmpchatData{getBgData(), channelName, user, r.Host}
