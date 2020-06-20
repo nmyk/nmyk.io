@@ -31,7 +31,7 @@ func getTemplate(desc string) *template.Template {
 
 func getBgData() BgData {
 	return BgData{
-		// If you do this on the frontend, users see a split second of the background at
+		// If we do this on the frontend, users will see a split second of the background at
 		// 0s delay before it updates. This way the background looks the same for everyone
 		// _and_ there are no visible transient states that make the site look cheap while
 		// it's loading. If I didn't care, I'd just use Squarespace ;)
@@ -46,6 +46,7 @@ func main() {
 	go func() {
 		log.Fatal(http.ListenAndServe(":7070", signalingMux))
 	}()
+
 	tmpchatMux := http.NewServeMux()
 	tmpchatMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		log.Print(r.Host)

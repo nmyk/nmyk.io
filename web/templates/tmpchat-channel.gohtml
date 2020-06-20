@@ -8,70 +8,107 @@
     <meta name="description" content="tmpchat is a WebRTC-based group text messaging application designed and built by Nick Mykins (nmyk.io)"/>
     <title>tmpch.at - {{.ChannelName}}</title>
     <script>
+        const SEPARATOR = " • ";
+
         const uuidv4 = () => {
             return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
                 (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
             );
         };
-        const newSignalingEvent = function(type, data) {
-            return JSON.stringify({
-            "channel_name": unescape(window.location.pathname.substr(1)),
-            "from_user": {"id": myUserId, "name": document.getElementById("myname").value},
-            "type": type,
-            "data": data
-            });
+
+        const newMessage = function(type, text) {
+            return {
+                "channel_name": unescape(window.location.pathname.substr(1)),
+                "from_user": {"id": myUserId, "name": document.getElementById("myname").value},
+                "type": type,
+                "text": text
+            };
         };
-        const nameTag = function (name, isMe) {
-            if (isMe) {return " " + name + " • "}
-            else { return " • " + name + " "}
+
+        const nameTag = function (message) {
+            let tag = document.createElement("div");
+            let name = document.createElement("span");
+            name.className = myUserId;
+            name.innerHTML = message["from_user"]["name"];
+            tag.appendChild(name);
+            if (message["from_user"]["id"] === myUserId) {
+                tag.className = "myname";
+                tag.innerHTML = SEPARATOR + tag.innerHTML;
+            }
+            else {
+                tag.className = "theirname";
+                tag.innerHTML = tag.innerHTML + SEPARATOR;
+            }
+            return tag;
         };
+
+        const doClear = () => {
+            let node = document.getElementById("messagelog");
+            while (node.firstChild) {
+                node.removeChild(node.firstChild);
+            }
+            document.getElementById("messagetext").focus();
+        };
+
+        const doNameChange = message => {
+            let toChange = document.getElementsByClassName(message["from_user"]["id"]);
+            for (let i=0; i<toChange.length; i++) {
+                toChange[i].innerHTML = message["text"];
+            }
+        };
+
         const myUserId = uuidv4();
+
         window.addEventListener("load", function(event) {
             const messageLog = document.getElementById("messagelog");
             const input = document.getElementById("messagetext");
 
-            const printSystem = function(eventdata) {
-                let message = document.createElement("div");
-                message.className = "systemmessage";
-                message.textContent = eventdata;
-                messageLog.appendChild(message);
-                if (document.activeElement === input) {
-                    messageLog.scrollTop = messageLog.scrollHeight;
+            const write = function(message) {
+                if (!message.from_user) { // System message for all users
+                    let sysmsg = document.createElement("div");
+                    sysmsg.className = "systemmessage";
+                    sysmsg.innerHTML = message.text;
+                    messageLog.appendChild(sysmsg);
+                } else {
+                    let name = nameTag(message);
+                    let msg = document.createElement("div");
+                    msg.className = "mymessage";
+                    let pre = document.createElement("pre");
+                    pre.textContent = message["text"];
+                    msg.appendChild(pre);
+                    msg.insertAdjacentHTML("afterBegin", name.outerHTML);
+                    messageLog.appendChild(msg);
                 }
-            };
-
-            const print = function(message) {
-                let name = document.createElement("div");
-                name.className = "myname";
-                name.textContent = nameTag(document.getElementById("myname").value);
-                let msg = document.createElement("div");
-                msg.className = "mymessage";
-                let pre = document.createElement("pre");
-                pre.textContent = message;
-                msg.appendChild(pre);
-                messageLog.appendChild(msg);
-                msg.insertAdjacentHTML("afterBegin", name.outerHTML);
-                console.log(msg.outerHTML);
                 if (document.activeElement === input) {
                    messageLog.scrollTop = messageLog.scrollHeight;
                 }
             };
+
             let ws = new WebSocket("ws://localhost:7070/");
+
             ws.onopen = function(event) {
-                ws.send(newSignalingEvent(0, null));
+                ws.send(JSON.stringify(newMessage(1, null))); // type 1: ENTRANCE
             };
+
             ws.onclose = function(event) {
-                print("CLOSE");
+                ws.send(JSON.stringify(newMessage(2, null))); // type 2: EXIT
                 ws = null;
             };
+
             ws.onmessage = function(event) {
-                let message = (JSON.parse(event.data)).data
-                if (!message.user) {
-                    printSystem(message);
+                let message = JSON.parse(event.data);
+                switch (message.type) {
+                    case 3: // NAME_CHANGE
+                        break;
+                    case 4: // CLEAR
+                        doClear();
+                        break;
+                    default: write(message);
                 }
             };
+
             ws.onerror = function(event) {
-                print("ERROR: " + event.data);
+                ws.close();
             };
 
             input.onfocus = function(event) {
@@ -90,7 +127,7 @@
                         return false;
                     }
                     document.getElementById("send").click();
-                    event.preventDefault(); // Prevents the addition of a new line in the text field (not needed in a lot of cases)
+                    return false;
                 }
             };
 
@@ -101,19 +138,25 @@
                 if (input.value === "") {
                     return false;
                 }
-                print(input.value);
+                let msg = newMessage(0, input.value);
+                write(msg);
+                // TODO: send on webRTC data channel
                 document.getElementById("messagetext").value = "";
                 return false;
             };
 
             document.getElementById("clear").onclick = function(event) {
-                let node = document.getElementById("messagelog");
-                while (node.firstChild) {
-                    node.removeChild(node.firstChild);
-                }
-                document.getElementById("messagetext").focus();
+                doClear();
+                ws.send(JSON.stringify(newMessage(4, null))); // type 4: CLEAR
                 return false;
             };
+
+            document.getElementById("namechanger").onsubmit = function(event) {
+                let msg = newMessage(3, document.getElementById("myname").value);
+                doNameChange(msg);
+                return false;
+            };
+
             document.getElementById("messagetext").focus();
         });
     </script>
@@ -132,9 +175,9 @@
 <div class="container" style="width: 80%;">
     <div class="messagelog" id="messagelog"></div>
     <div style="margin-top: 2px; margin-bottom: 10px;">
-        <div style="width: 85%; float: left;">
-            online: <input type="nametext" id="myname" size=10 maxlength=16 value=anon-00>
-        </div>
+        <form id="namechanger" style="width: 85%; float: left;">
+            online: <input id="myname" type="nametext" size=10 maxlength=16 value=anon-00>
+        </form>
         <div style="float: right;">
             <input type="submit" id="clear" value="clear">
         </div>

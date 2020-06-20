@@ -9,19 +9,21 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type Signal struct {
-	ChannelName string      `json:"channel_name"`
-	FromUser    User        `json:"from_user"`
-	Type        MessageType `json:"type"`
-	Data        string      `json:"data"`
+type Message struct {
+	ChannelName string    `json:"channel_name"`
+	FromUser    *User     `json:"from_user"`
+	Type        EventType `json:"type"`
+	Text        string    `json:"text"`
 }
 
-type MessageType int
+type EventType int
 
 const (
-	ENTRANCE MessageType = iota
+	// Event type 0 denotes a user chat message, which we never see.
+	ENTRANCE EventType = iota + 1
 	EXIT
 	NAME_CHANGE
+	CLEAR
 )
 
 type User struct {
@@ -35,12 +37,13 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-func getEntranceMessage(r *Signal) []byte {
-	s := Signal{
+func getEntranceMessage(r *Message) []byte {
+	text := fmt.Sprintf("<span class=\"%s\">%s</span> joined", r.FromUser.Id, r.FromUser.Name)
+	s := Message{
 		ChannelName: r.ChannelName,
-		FromUser:    User{},
+		FromUser:    nil,
 		Type:        ENTRANCE,
-		Data:        fmt.Sprintf("%s joined", r.FromUser.Name),
+		Text:        text,
 	}
 	resp, _ := json.Marshal(s)
 	log.Print(string(resp))
@@ -61,10 +64,10 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		log.Printf("recv: %s", rawSignal)
-		signal := &Signal{}
-		_ = json.Unmarshal(rawSignal, signal)
-		if signal.Type == ENTRANCE {
-			err = c.WriteMessage(mt, getEntranceMessage(signal))
+		message := &Message{}
+		_ = json.Unmarshal(rawSignal, message)
+		if message.Type == ENTRANCE {
+			err = c.WriteMessage(mt, getEntranceMessage(message))
 			if err != nil {
 				log.Println("write:", err)
 				break
