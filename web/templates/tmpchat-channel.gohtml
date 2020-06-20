@@ -9,6 +9,12 @@
     <title>tmpch.at - {{.ChannelName}}</title>
     <script>
         const SEPARATOR = " • ";
+        const SignalingEvent = {
+            "ENTRANCE": 1,
+            "EXIT": 2,
+            "NAME_CHANGE": 3,
+            "CLEAR": 4
+        };
 
         const uuidv4 = () => {
             return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
@@ -108,20 +114,20 @@
             let ws = new WebSocket("ws://localhost:7070/");
 
             ws.onopen = function(event) {
-                ws.send(JSON.stringify(newMessage(1, null))); // type 1: ENTRANCE
+                ws.send(JSON.stringify(newMessage(SignalingEvent.ENTRANCE, null)));
             };
 
             ws.onclose = function(event) {
-                ws.send(JSON.stringify(newMessage(2, null))); // type 2: EXIT
+                ws.send(JSON.stringify(newMessage(SignalingEvent.EXIT, null)));
                 ws = null;
             };
 
             ws.onmessage = function(event) {
                 let message = JSON.parse(event.data);
                 switch (message.type) {
-                    case 3: // NAME_CHANGE
+                    case SignalingEvent.NAME_CHANGE:
                         break;
-                    case 4: // CLEAR
+                    case SignalingEvent.CLEAR:
                         doClear();
                         break;
                     default: write(message);
@@ -166,16 +172,16 @@
                 return false;
             };
 
-            document.getElementById("clear").onclick = function(event) {
-                doClear();
-                ws.send(JSON.stringify(newMessage(4, null))); // type 4: CLEAR
+            document.getElementById("namechanger").onsubmit = function(event) {
+                let msg = newMessage(SignalingEvent.NAME_CHANGE, document.getElementById("myname").value);
+                doNameChange(msg);
+                input.focus();
                 return false;
             };
 
-            document.getElementById("namechanger").onsubmit = function(event) {
-                let msg = newMessage(3, document.getElementById("myname").value);
-                doNameChange(msg);
-                input.focus();
+            document.getElementById("clear").onclick = function(event) {
+                doClear();
+                ws.send(JSON.stringify(newMessage(SignalingEvent.CLEAR, null)));
                 return false;
             };
 
