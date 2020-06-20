@@ -42,6 +42,21 @@
             return tag;
         };
 
+        const shouldStackMsg = (message, lastMsgElement) => {
+            if (message["type"] !== 0) { // Can only stack user messages
+                return false;
+            }
+            if (!lastMsgElement) {
+                return false;
+            }
+            if (lastMsgElement.className === "systemmessage") {
+                return false;
+            }
+            let lastMsgUserId = lastMsgElement.firstElementChild.firstElementChild.className;
+            console.log(lastMsgUserId);
+            return lastMsgUserId === message["from_user"]["id"];
+        };
+
         const doClear = () => {
             let node = document.getElementById("messagelog");
             while (node.firstChild) {
@@ -64,23 +79,29 @@
             const input = document.getElementById("messagetext");
 
             const write = function(message) {
-                if (!message.from_user) { // System message for all users
+                const lastMsgElement = messageLog.lastElementChild;
+                if (!message["from_user"]) { // System message for all users
                     let sysmsg = document.createElement("div");
                     sysmsg.className = "systemmessage";
                     sysmsg.innerHTML = message.text;
                     messageLog.appendChild(sysmsg);
+                } else if (shouldStackMsg(message, lastMsgElement)) {
+                    let currentText = lastMsgElement.getElementsByClassName("pre")[0];
+                    console.log(lastMsgElement);
+                    currentText.textContent = currentText.textContent + "\n" + message["text"];
                 } else {
                     let name = nameTag(message);
                     let msg = document.createElement("div");
                     msg.className = "mymessage";
                     let pre = document.createElement("pre");
+                    pre.className = "pre";
                     pre.textContent = message["text"];
                     msg.appendChild(pre);
                     msg.insertAdjacentHTML("afterBegin", name.outerHTML);
                     messageLog.appendChild(msg);
                 }
                 if (document.activeElement === input) {
-                   messageLog.scrollTop = messageLog.scrollHeight;
+                    messageLog.scrollTop = messageLog.scrollHeight;
                 }
             };
 
@@ -141,7 +162,7 @@
                 let msg = newMessage(0, input.value);
                 write(msg);
                 // TODO: send on webRTC data channel
-                document.getElementById("messagetext").value = "";
+                input.value = "";
                 return false;
             };
 
@@ -154,10 +175,11 @@
             document.getElementById("namechanger").onsubmit = function(event) {
                 let msg = newMessage(3, document.getElementById("myname").value);
                 doNameChange(msg);
+                input.focus();
                 return false;
             };
 
-            document.getElementById("messagetext").focus();
+            input.focus();
         });
     </script>
 </head>
@@ -176,7 +198,7 @@
     <div class="messagelog" id="messagelog"></div>
     <div style="margin-top: 2px; margin-bottom: 10px;">
         <form id="namechanger" style="width: 85%; float: left;">
-            online: <input id="myname" type="nametext" size=10 maxlength=16 value=anon-00>
+            online: <input id="myname" autocomplete="off" type="nametext" size=10 maxlength=16 value=anon-00>
         </form>
         <div style="float: right;">
             <input type="submit" id="clear" value="clear">
