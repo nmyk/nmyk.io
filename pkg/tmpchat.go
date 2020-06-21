@@ -72,7 +72,7 @@ func (c *Channel) run() {
 	defer c.close()
 MessageLoop:
 	for m := range c.Messages {
-		switch t := m.Type; t {
+		switch m.Type {
 		case Entrance:
 			c.Connections[m.FromUser.ID].WS = m.fromConn
 			Reply(m,
