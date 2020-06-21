@@ -136,7 +136,7 @@
                 ws.send(JSON.stringify(newMessage(SignalingEvent.Entrance, content)));
             };
 
-            window.onbeforeunload = () => {
+            window.onunload = () => {
                 let content = `<span class="${myUserId}">${myName}</span> left`;
                 ws.send(JSON.stringify(newMessage(SignalingEvent.Exit, content)));
                 ws.close();

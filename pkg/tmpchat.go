@@ -21,35 +21,6 @@ type Channel struct {
 	AnonIndex   *uint64
 }
 
-func (c Channel) GetUsers() []User {
-	users := make([]User, len(c.Connections))
-	i := 0
-	for userId := range c.Connections {
-		users[i] = User{userId, (c.Connections)[userId].UserName}
-		i++
-	}
-	return users
-}
-
-func (c Channel) AddUser() User {
-	user := User{uuid.New().String(), fmt.Sprintf("anon_%d", atomic.AddUint64(c.AnonIndex, 1))}
-	log.Print(user.Name)
-	c.Connections[user.ID] = &Conn{nil, user.Name}
-	return user
-}
-
-func (c *Channel) NameIsAvailable(userName string) bool {
-	if userName == "" {
-		return false
-	}
-	for userId := range c.Connections {
-		if userName == c.Connections[userId].UserName {
-			return false
-		}
-	}
-	return true
-}
-
 type Connections map[string]*Conn
 
 type Conn struct {
@@ -67,6 +38,35 @@ func NewChannel(channelName string) *Channel {
 	}
 	go c.run()
 	return c
+}
+
+func (c *Channel) GetUsers() []User {
+	users := make([]User, len(c.Connections))
+	i := 0
+	for userId := range c.Connections {
+		users[i] = User{userId, (c.Connections)[userId].UserName}
+		i++
+	}
+	return users
+}
+
+func (c *Channel) AddUser() User {
+	user := User{uuid.New().String(), fmt.Sprintf("anon_%d", atomic.AddUint64(c.AnonIndex, 1))}
+	log.Print(user.Name)
+	c.Connections[user.ID] = &Conn{nil, user.Name}
+	return user
+}
+
+func (c *Channel) NameIsAvailable(userName string) bool {
+	if userName == "" {
+		return false
+	}
+	for userId := range c.Connections {
+		if userName == c.Connections[userId].UserName {
+			return false
+		}
+	}
+	return true
 }
 
 func (c *Channel) run() {
