@@ -96,45 +96,45 @@
             }
         };
 
+        const announce = message => {
+            let announcement = document.createElement("div");
+            announcement.className = "systemmessage";
+            announcement.innerHTML = message.content;
+            document.getElementById("messagelog").appendChild(announcement);
+        };
+
+        const write = message => {
+            let messageLog = document.getElementById("messagelog");
+            const lastMsgElement = messageLog.lastElementChild;
+            if (shouldStackMsg(message, lastMsgElement)) {
+                let currentText = lastMsgElement.getElementsByClassName("pre")[0];
+                currentText.textContent = currentText.textContent + "\n" + message["content"];
+            } else {
+                let isFromMe = message["from_user"]["id"] === myUserId;
+                let name = nameTag(message, isFromMe);
+                let msg = document.createElement("div");
+                if (isFromMe) {
+                    msg.className = "mymessage";
+                } else {
+                    msg.className = "theirmessage";
+                }
+                let pre = document.createElement("pre");
+                pre.className = "pre";
+                pre.textContent = message["content"];
+                msg.appendChild(pre);
+                msg.insertAdjacentHTML("afterbegin", name.outerHTML);
+                messageLog.appendChild(msg);
+            }
+            if (document.activeElement === document.getElementById("messagetext")) {
+                messageLog.scrollTop = messageLog.scrollHeight;
+            }
+        };
+
         const myUserId = "{{.User.ID}}";
         let myName = "{{.User.Name}}";
 
         window.addEventListener("load", () => {
-            const messageLog = document.getElementById("messagelog");
             const input = document.getElementById("messagetext");
-
-            const announce = message => {
-                let announcement = document.createElement("div");
-                announcement.className = "systemmessage";
-                announcement.innerHTML = message.content;
-                messageLog.appendChild(announcement);
-            };
-
-            const write = message => {
-                const lastMsgElement = messageLog.lastElementChild;
-                if (shouldStackMsg(message, lastMsgElement)) {
-                    let currentText = lastMsgElement.getElementsByClassName("pre")[0];
-                    currentText.textContent = currentText.textContent + "\n" + message["content"];
-                } else {
-                    let isFromMe = message["from_user"]["id"] === myUserId;
-                    let name = nameTag(message, isFromMe);
-                    let msg = document.createElement("div");
-                    if (isFromMe) {
-                        msg.className = "mymessage";
-                    } else {
-                        msg.className = "theirmessage";
-                    }
-                    let pre = document.createElement("pre");
-                    pre.className = "pre";
-                    pre.textContent = message["content"];
-                    msg.appendChild(pre);
-                    msg.insertAdjacentHTML("afterbegin", name.outerHTML);
-                    messageLog.appendChild(msg);
-                }
-                if (document.activeElement === input) {
-                    messageLog.scrollTop = messageLog.scrollHeight;
-                }
-            };
 
             let ws = new WebSocket("ws://localhost:7070/");
 
@@ -186,7 +186,8 @@
             };
 
             input.onfocus = () => {
-                messageLog.scrollTop = messageLog.scrollHeight;
+                let m = document.getElementById("messagelog");
+                m.scrollTop = m.scrollHeight;
             };
 
             let doubleEnterTs; // Clear chat by double-pressing Enter with no text in the input field
@@ -219,16 +220,6 @@
                 return false;
             };
 
-            document.getElementById("myname").onfocus = () => {
-                document.getElementById("myname").value = "";
-                return false;
-            };
-
-            document.getElementById("myname").onblur = () => {
-                document.getElementById("myname").value = myName;
-                return false;
-            };
-
             document.getElementById("namechange").onsubmit = () => {
                 if (myName === "") {
                     return false;
@@ -246,6 +237,16 @@
                 ws.send(JSON.stringify(message));
                 doNameChange(message);
                 input.focus();
+                return false;
+            };
+
+            document.getElementById("myname").onfocus = () => {
+                document.getElementById("myname").value = "";
+                return false;
+            };
+
+            document.getElementById("myname").onblur = () => {
+                document.getElementById("myname").value = myName;
                 return false;
             };
 
