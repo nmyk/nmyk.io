@@ -52,7 +52,6 @@ func (c *Channel) GetUsers() []User {
 
 func (c *Channel) AddUser() User {
 	user := User{uuid.New().String(), fmt.Sprintf("anon_%d", atomic.AddUint64(c.AnonIndex, 1))}
-	log.Print(user.Name)
 	c.Connections[user.ID] = &Conn{nil, user.Name}
 	return user
 }
