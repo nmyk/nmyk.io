@@ -107,8 +107,8 @@
             let messageLog = document.getElementById("messagelog");
             const lastMsgElement = messageLog.lastElementChild;
             if (shouldStackMsg(message, lastMsgElement)) {
-                let currentText = lastMsgElement.getElementsByClassName("pre")[0];
-                currentText.textContent = currentText.textContent + "\n" + message["content"];
+                let currentText = lastMsgElement.getElementsByClassName("chatmessage")[0];
+                currentText.textContent += "\n" + message["content"];
             } else {
                 let isFromMe = message["from_user"]["id"] === myUserId;
                 let name = nameTag(message, isFromMe);
@@ -119,7 +119,7 @@
                     msg.className = "theirmessage";
                 }
                 let pre = document.createElement("pre");
-                pre.className = "pre";
+                pre.className = "chatmessage";
                 pre.textContent = message["content"];
                 msg.appendChild(pre);
                 msg.insertAdjacentHTML("afterbegin", name.outerHTML);
