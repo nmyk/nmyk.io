@@ -21,18 +21,11 @@ type Channel struct {
 	AnonIndex   *uint64
 }
 
-type Connections map[string]*Conn
-
-type Conn struct {
-	WS       *websocket.Conn
-	UserName string
-}
-
-func (c Connections) GetUsers() []User {
-	users := make([]User, len(c))
+func (c Channel) GetUsers() []User {
+	users := make([]User, len(c.Connections))
 	i := 0
-	for userId := range c {
-		users[i] = User{userId, (c)[userId].UserName}
+	for userId := range c.Connections {
+		users[i] = User{userId, (c.Connections)[userId].UserName}
 		i++
 	}
 	return users
@@ -57,6 +50,13 @@ func (c *Channel) NameIsAvailable(userName string) bool {
 	return true
 }
 
+type Connections map[string]*Conn
+
+type Conn struct {
+	WS       *websocket.Conn
+	UserName string
+}
+
 func NewChannel(channelName string) *Channel {
 	var i uint64
 	c := &Channel{
@@ -74,36 +74,36 @@ func (c *Channel) run() {
 MessageLoop:
 	for m := range c.Messages {
 		switch t := m.Type; t {
-		case ENTRANCE:
+		case Entrance:
 			c.Connections[m.FromUser.ID].WS = m.fromConn
 			Reply(m,
 				&Message{
 					wsMsgType:   1, // text
 					ChannelName: m.ChannelName,
-					Type:        WELCOME,
-					Content:     c.Connections.GetUsers(),
+					Type:        Welcome,
+					Content:     c.GetUsers(),
 				})
-		case EXIT:
+		case Exit:
 			_ = c.Connections[m.FromUser.ID].WS.Close()
 			delete(c.Connections, m.FromUser.ID)
 			if len(c.Connections) == 0 {
 				return
 			}
-		case NAME_CHANGE:
+		case NameChange:
 			if !c.NameIsAvailable(m.Content.(string)) {
-				// a NAME_CHANGE rejection is just a normal NAME_CHANGE
+				// a NameChange rejection is just a normal NameChange
 				// message telling you to change back to your old name.
 				Reply(m,
 					&Message{
 						wsMsgType: 1, // text
 						FromUser:  m.FromUser,
-						Type:      NAME_CHANGE,
+						Type:      NameChange,
 						Content:   m.FromUser.Name,
 					})
 				continue MessageLoop
 			}
 			c.Connections[m.FromUser.ID].UserName = m.Content.(string)
-			log.Print(c.Connections.GetUsers())
+			log.Print(c.GetUsers())
 		}
 		c.Broadcast(m)
 	}
@@ -116,8 +116,8 @@ func (c *Channel) close() {
 }
 
 func Reply(to *Message, reply *Message) {
-	out, _ := json.Marshal(reply)
-	err := to.fromConn.WriteMessage(reply.wsMsgType, out)
+	m, _ := json.Marshal(reply)
+	err := to.fromConn.WriteMessage(reply.wsMsgType, m)
 	if err != nil {
 		log.Println("write:", err)
 	}
@@ -151,11 +151,11 @@ type EventType int
 
 const (
 	// Event type 0 denotes a user chat message, which we never see here.
-	ENTRANCE EventType = iota + 1
-	EXIT
-	NAME_CHANGE
-	CLEAR
-	WELCOME
+	Entrance EventType = iota + 1
+	Exit
+	NameChange
+	Clear
+	Welcome
 )
 
 func signalingHandler(w http.ResponseWriter, r *http.Request) {

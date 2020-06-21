@@ -11,11 +11,11 @@
         const SEPARATOR = " • ";
 
         const SignalingEvent = {
-            "ENTRANCE": 1,
-            "EXIT": 2,
-            "NAME_CHANGE": 3,
-            "CLEAR": 4,
-            "WELCOME": 5
+            "Entrance": 1,
+            "Exit": 2,
+            "NameChange": 3,
+            "Clear": 4,
+            "Welcome": 5
         };
 
         const newMessage = (type, content) => {
@@ -133,12 +133,12 @@
 
             ws.onopen = () => {
                 let content = `<span class="${myUserId}">${myName}</span> joined`;
-                ws.send(JSON.stringify(newMessage(SignalingEvent.ENTRANCE, content)));
+                ws.send(JSON.stringify(newMessage(SignalingEvent.Entrance, content)));
             };
 
             window.onbeforeunload = () => {
                 let content = `<span class="${myUserId}">${myName}</span> left`;
-                ws.send(JSON.stringify(newMessage(SignalingEvent.EXIT, content)));
+                ws.send(JSON.stringify(newMessage(SignalingEvent.Exit, content)));
                 ws.close();
             };
 
@@ -146,21 +146,21 @@
                 let message = JSON.parse(event.data);
                 console.log(message);
                 switch (message.type) {
-                    case SignalingEvent.ENTRANCE:
+                    case SignalingEvent.Entrance:
                         doEntrance(message["from_user"]);
                         announce(message);
                         break;
-                    case SignalingEvent.EXIT:
+                    case SignalingEvent.Exit:
                         doExit(message["from_user"]);
                         announce(message);
                         break;
-                    case SignalingEvent.NAME_CHANGE:
+                    case SignalingEvent.NameChange:
                         doNameChange(message);
                         break;
-                    case SignalingEvent.CLEAR:
+                    case SignalingEvent.Clear:
                         doClear();
                         break;
-                    case SignalingEvent.WELCOME:
+                    case SignalingEvent.Welcome:
                         for (let i=0; i<message["content"].length; i++) {
                            doEntrance(message["content"][i])
                         }
@@ -223,7 +223,7 @@
                 let message = {
                     "channel_name": unescape(window.location.pathname.substr(1)),
                     "from_user": {"id": myUserId, "name": myName},
-                    "type": SignalingEvent.NAME_CHANGE,
+                    "type": SignalingEvent.NameChange,
                     "content": document.getElementById("myname").value
                 };
                 if (!ws) {
@@ -241,7 +241,7 @@
                     doClear();
                     return false;
                 }
-                ws.send(JSON.stringify(newMessage(SignalingEvent.CLEAR, null)));
+                ws.send(JSON.stringify(newMessage(SignalingEvent.Clear, null)));
                 return false;
             };
 
