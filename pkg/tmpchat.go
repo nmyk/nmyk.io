@@ -216,7 +216,9 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		message.fromConn = c
 		message.wsMsgType = mt
+		Tmpchat.RLock()
 		Tmpchat.Channels[message.ChannelName].Messages <- message
+		Tmpchat.RUnlock()
 	}
 }
 
