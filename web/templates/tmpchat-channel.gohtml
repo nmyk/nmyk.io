@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="tmpchat is a WebRTC-based group text messaging application designed and built by Nick Mykins (nmyk.io)"/>
     <title>tmpch.at - {{.ChannelName}}</title>
+    <script type="text/javascript" src="https://cdn.nmyk.io/assets/he.js"></script>
     <script>
         const SEPARATOR = " • ";
 
@@ -57,8 +58,14 @@
 
         const doEntrance = user => {
             if (user["id"] !== myUserId) {
-                let name = `<span>${SEPARATOR}<pre class="${user["id"]}" style="display: inline;">${user["name"]}</pre></span>`;
-                document.getElementById("namechange").innerHTML += name
+                let tag = document.createElement("div");
+                let name = document.createElement("span");
+                name.className = user["id"];
+                name.innerHTML = user["name"];
+                tag.appendChild(name);
+                tag.style.display = "inline";
+                tag.innerHTML = SEPARATOR + tag.innerHTML;
+                document.getElementById("namechange").appendChild(tag)
             }
         };
 
@@ -84,7 +91,7 @@
                 toChange[i].innerHTML = message["content"];
             }
             if (userId === myUserId) {
-                myName = message["content"];
+                myName = he.unescape(message["content"]);
                 document.getElementById("myname").value = myName;
             }
         };
@@ -132,12 +139,18 @@
             let ws = new WebSocket("ws://localhost:7070/");
 
             ws.onopen = () => {
-                let content = `<span class="${myUserId}">${myName}</span> joined`;
+                let nametag = document.createElement("span");
+                nametag.className = myUserId;
+                nametag.textContent = myName;
+                let content = nametag.outerHTML + " joined";
                 ws.send(JSON.stringify(newMessage(SignalingEvent.Entrance, content)));
             };
 
             window.onunload = () => {
-                let content = `<span class="${myUserId}">${myName}</span> left`;
+                let nametag = document.createElement("span");
+                nametag.className = myUserId;
+                nametag.textContent = myName;
+                let content = nametag.outerHTML + " left";
                 ws.send(JSON.stringify(newMessage(SignalingEvent.Exit, content)));
                 ws.close();
             };
@@ -224,7 +237,7 @@
                     "channel_name": unescape(window.location.pathname.substr(1)),
                     "from_user": {"id": myUserId, "name": myName},
                     "type": SignalingEvent.NameChange,
-                    "content": document.getElementById("myname").value
+                    "content": he.escape(document.getElementById("myname").value)
                 };
                 if (!ws) {
                     doNameChange(message);

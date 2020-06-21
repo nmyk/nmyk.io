@@ -102,7 +102,6 @@ MessageLoop:
 				continue MessageLoop
 			}
 			c.Connections[m.FromUser.ID].UserName = m.Content.(string)
-			log.Print(c.GetUsers())
 		}
 		c.Broadcast(m)
 	}
