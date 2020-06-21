@@ -14,15 +14,16 @@
             "ENTRANCE": 1,
             "EXIT": 2,
             "NAME_CHANGE": 3,
-            "CLEAR": 4
+            "CLEAR": 4,
+            "WELCOME": 5
         };
 
-        const newMessage = (type, text) => {
+        const newMessage = (type, content) => {
             return {
                 "channel_name": unescape(window.location.pathname.substr(1)),
                 "from_user": {"id": myUserId, "name": document.getElementById("myname").value},
                 "type": type,
-                "text": text
+                "content": content
             };
         };
 
@@ -54,16 +55,17 @@
             return message["from_user"]["id"] === lastMsgUserId;
         };
 
-        const doEntrance = message => {
-            if (message["from_user"]["id"] !== myUserId) {
-                let name = `<span class="${message["from_user"]["id"]}"><pre style="display: inline;">${SEPARATOR}${message["from_user"]["name"]}</pre></span>`;
-                document.getElementById("namechanger").innerHTML += name
+        const doEntrance = user => {
+            if (user["id"] !== myUserId) {
+                let name = `<span>${SEPARATOR}<pre class="${user["id"]}" style="display: inline;">${user["name"]}</pre></span>`;
+                document.getElementById("namechange").innerHTML += name
             }
         };
 
-        const doExit = message => {
-            if (message["from_user"]["id"] !== myUserId) {
-                document.getElementById("namechanger").getElementsByClassName(message["from_user"]["id"])[0].outerHTML = "";
+        const doExit = user => {
+            if (user["id"] !== myUserId) {
+                let element = document.getElementById("namechange").getElementsByClassName(user["id"])[0];
+                element.parentElement.outerHTML = "";
             }
         };
 
@@ -76,24 +78,28 @@
         };
 
         const doNameChange = message => {
-            let toChange = document.getElementsByClassName(message["from_user"]["id"]);
+            let userId = message["from_user"]["id"];
+            let toChange = document.getElementsByClassName(userId);
             for (let i=0; i<toChange.length; i++) {
-                toChange[i].innerHTML = message["text"];
+                toChange[i].innerHTML = message["content"];
+            }
+            if (userId === myUserId) {
+                myName = message["content"];
+                document.getElementById("myname").value = myName;
             }
         };
 
-        const whoami = () => document.getElementById("myname").value;
-
         const myUserId = "{{.User.ID}}";
+        let myName = "{{.User.Name}}";
 
-        window.addEventListener("load", function(event) {
+        window.addEventListener("load", () => {
             const messageLog = document.getElementById("messagelog");
             const input = document.getElementById("messagetext");
 
             const announce = message => {
                 let announcement = document.createElement("div");
                 announcement.className = "systemmessage";
-                announcement.innerHTML = message.text;
+                announcement.innerHTML = message.content;
                 messageLog.appendChild(announcement);
             };
 
@@ -101,7 +107,7 @@
                 const lastMsgElement = messageLog.lastElementChild;
                 if (shouldStackMsg(message, lastMsgElement)) {
                     let currentText = lastMsgElement.getElementsByClassName("pre")[0];
-                    currentText.textContent = currentText.textContent + "\n" + message["text"];
+                    currentText.textContent = currentText.textContent + "\n" + message["content"];
                 } else {
                     let isFromMe = message["from_user"]["id"] === myUserId;
                     let name = nameTag(message, isFromMe);
@@ -113,7 +119,7 @@
                     }
                     let pre = document.createElement("pre");
                     pre.className = "pre";
-                    pre.textContent = message["text"];
+                    pre.textContent = message["content"];
                     msg.appendChild(pre);
                     msg.insertAdjacentHTML("afterbegin", name.outerHTML);
                     messageLog.appendChild(msg);
@@ -126,25 +132,26 @@
             let ws = new WebSocket("ws://localhost:7070/");
 
             ws.onopen = () => {
-                let text = `<span class="${myUserId}">${whoami()}</span> joined`;
-                ws.send(JSON.stringify(newMessage(SignalingEvent.ENTRANCE, text)));
+                let content = `<span class="${myUserId}">${myName}</span> joined`;
+                ws.send(JSON.stringify(newMessage(SignalingEvent.ENTRANCE, content)));
             };
 
             window.onbeforeunload = () => {
-                let text = `<span class="${myUserId}">${whoami()}</span> left`;
-                ws.send(JSON.stringify(newMessage(SignalingEvent.EXIT, text)));
+                let content = `<span class="${myUserId}">${myName}</span> left`;
+                ws.send(JSON.stringify(newMessage(SignalingEvent.EXIT, content)));
                 ws.close();
             };
 
             ws.onmessage = event => {
                 let message = JSON.parse(event.data);
+                console.log(message);
                 switch (message.type) {
                     case SignalingEvent.ENTRANCE:
-                        doEntrance(message);
+                        doEntrance(message["from_user"]);
                         announce(message);
                         break;
                     case SignalingEvent.EXIT:
-                        doExit(message);
+                        doExit(message["from_user"]);
                         announce(message);
                         break;
                     case SignalingEvent.NAME_CHANGE:
@@ -152,6 +159,11 @@
                         break;
                     case SignalingEvent.CLEAR:
                         doClear();
+                        break;
+                    case SignalingEvent.WELCOME:
+                        for (let i=0; i<message["content"].length; i++) {
+                           doEntrance(message["content"][i])
+                        }
                         break;
                 }
             };
@@ -194,13 +206,32 @@
                 return false;
             };
 
-            document.getElementById("namechanger").onsubmit = () => {
-                let message = newMessage(SignalingEvent.NAME_CHANGE, document.getElementById("myname").value);
+            document.getElementById("myname").onfocus = () => {
+                document.getElementById("myname").value = "";
+                return false;
+            };
+
+            document.getElementById("myname").onblur = () => {
+                document.getElementById("myname").value = myName;
+                return false;
+            };
+
+            document.getElementById("namechange").onsubmit = () => {
+                if (myName === "") {
+                    return false;
+                }
+                let message = {
+                    "channel_name": unescape(window.location.pathname.substr(1)),
+                    "from_user": {"id": myUserId, "name": myName},
+                    "type": SignalingEvent.NAME_CHANGE,
+                    "content": document.getElementById("myname").value
+                };
                 if (!ws) {
                     doNameChange(message);
                     return false;
                 }
                 ws.send(JSON.stringify(message));
+                doNameChange(message);
                 input.focus();
                 return false;
             };
@@ -232,7 +263,7 @@
 <div class="container" style="width: 80%;">
     <div class="messagelog" id="messagelog"></div>
     <div style="margin-top: 2px; margin-bottom: 10px;">
-        <form id="namechanger" style="width: 85%; float: left;">
+        <form id="namechange" style="width: 85%; float: left;">
             online: <input id="myname" autocomplete="off" type="nametext" size=10 maxlength=16 value="{{.User.Name}}">
         </form>
         <div style="float: right;">

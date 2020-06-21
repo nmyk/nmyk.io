@@ -50,7 +50,7 @@ func main() {
 	nmykMux := http.NewServeMux()
 	nmykMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		tmpl := getTemplate("index")
-		tmpl.Execute(w, getBgData())
+		_ = tmpl.Execute(w, getBgData())
 	})
 	log.Fatal(http.ListenAndServe(":8080", nmykMux))
 }
