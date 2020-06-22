@@ -113,11 +113,7 @@
                 let isFromMe = message["from_user"]["id"] === myUserId;
                 let name = nameTag(message, isFromMe);
                 let msg = document.createElement("div");
-                if (isFromMe) {
-                    msg.className = "mymessage";
-                } else {
-                    msg.className = "theirmessage";
-                }
+                msg.className = isFromMe ? "mymessage" : "theirmessage";
                 let pre = document.createElement("pre");
                 pre.className = "chatmessage";
                 pre.textContent = message["content"];
@@ -136,7 +132,7 @@
         window.addEventListener("load", () => {
             const input = document.getElementById("messagetext");
 
-            let ws = new WebSocket("ws://localhost:7070/");
+            let ws = new WebSocket("ws://{{.SignalingHost|safeURL}}");
 
             ws.onopen = () => {
                 let nametag = document.createElement("span");
@@ -207,10 +203,7 @@
             };
 
             document.getElementById("send").onclick = () => {
-                if (!ws) {
-                    return false;
-                }
-                if (input.value === "") {
+                if (!ws || input.value === "") {
                     return false;
                 }
                 let msg = newMessage(0, input.value);
@@ -228,12 +221,11 @@
                     SignalingEvent.NameChange,
                     he.escape(document.getElementById("myname").value)
                 );
+                doNameChange(message);
                 if (!ws) {
-                    doNameChange(message);
                     return false;
                 }
                 ws.send(JSON.stringify(message));
-                doNameChange(message);
                 input.focus();
                 return false;
             };
@@ -268,7 +260,7 @@
         animation-duration: {{.BgAnimationDuration}}s;
         animation-delay: {{.BgAnimationDelay}}s;">
 <div class="vspace50px"></div>
-<a href="http://localhost:8081" type="home">tmpchat</a>
+<a href="http://{{.AppHost|safeURL}}/" type="home">tmpchat</a>
 <br>
 #{{.ChannelName}}
 
@@ -279,7 +271,7 @@
             online: <input id="myname" autocomplete="off" type="nametext" size=10 maxlength=16 value="{{.User.Name}}">
         </form>
         <div style="float: right;">
-            <input type="submit" id="clear" value="clear">
+            <input type="button" id="clear" value="clear">
         </div>
     </div>
 

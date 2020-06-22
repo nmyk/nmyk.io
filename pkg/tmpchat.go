@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"sync"
 	"sync/atomic"
 
@@ -163,9 +164,8 @@ func (c *Channel) Run() {
 				// A Welcome message lets new members know who else is here.
 				msg.Reply(
 					Message{
-						ChannelName: msg.ChannelName,
-						Type:        Welcome,
-						Content:     c.GetUsers(),
+						Type:    Welcome,
+						Content: c.GetUsers(),
 					})
 			} else {
 				continue
@@ -280,22 +280,32 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 
 type tmpchatPageData struct {
 	bgData
-	ChannelName string
-	User        User
-	AppHost     string // So this works seamlessly in dev (localhost) and prod (tmpch.at)
+	ChannelName   string
+	User          User
+	AppHost       string
+	SignalingHost string
 }
 
 func tmpchatHandler(w http.ResponseWriter, r *http.Request) {
 	channelName := r.URL.Path[1:] // Omit leading slash in path
 	var tmpl *template.Template
 	var newUser User
+	fm := template.FuncMap{
+		"safeURL": func(u string) template.URL { return template.URL(u) },
+	}
 	if channelName == "" {
-		tmpl = getTemplate("tmpchat-index")
+		tmpl = getTemplate("tmpchat-index", fm)
 	} else {
-		tmpl = getTemplate("tmpchat-channel")
+		tmpl = getTemplate("tmpchat-channel", fm)
+		log.Println(fmt.Sprintf("%v", tmpl))
 		channel := tmpchat.CreateIfNecessary(channelName)
 		newUser = channel.AddUser()
 	}
-	d := tmpchatPageData{getBgData(), channelName, newUser, r.Host}
+	d := tmpchatPageData{getBgData(),
+		channelName,
+		newUser,
+		os.Getenv("TMPCHAT_HOST"),
+		os.Getenv("TMPCHAT_SIGNALING_HOST"),
+	}
 	_ = tmpl.Execute(w, d)
 }

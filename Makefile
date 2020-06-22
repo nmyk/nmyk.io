@@ -9,6 +9,7 @@ deploy:
 	./scripts/deploy.py
 
 .PHONY: develop
+develop: export APP_ENVIRONMENT=dev
 develop:
 	docker-compose -f $(COMPOSE_FILE) build app
 	docker-compose -f $(COMPOSE_FILE) \
@@ -24,9 +25,11 @@ develop:
 	trap 'make stop' EXIT; docker exec -it app-dev /bin/sh
 
 .PHONY: run-prod
+run-prod: export APP_ENVIRONMENT=prod
 run-prod:
 	docker-compose -f $(COMPOSE_FILE) up -d --build
 
 .PHONY: stop
+stop: export APP_ENVIRONMENT=prod
 stop:
 	docker-compose -f $(COMPOSE_FILE) down --remove-orphans

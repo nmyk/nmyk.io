@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
@@ -19,8 +20,9 @@ type bgData struct {
 	BgAnimationDelay    int
 }
 
-func getTemplate(desc string) *template.Template {
-	return template.Must(template.ParseFiles(fmt.Sprintf("web/templates/%s.gohtml", desc)))
+func getTemplate(desc string, funcMap template.FuncMap) *template.Template {
+	t, _ := ioutil.ReadFile(fmt.Sprintf("web/templates/%s.gohtml", desc))
+	return template.Must(template.New(desc).Funcs(funcMap).Parse(string(t)))
 }
 
 func getBgData() bgData {
@@ -49,7 +51,7 @@ func main() {
 
 	nmykMux := http.NewServeMux()
 	nmykMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		tmpl := getTemplate("index")
+		tmpl := getTemplate("index", template.FuncMap{})
 		_ = tmpl.Execute(w, getBgData())
 	})
 	log.Fatal(http.ListenAndServe(":8080", nmykMux))
