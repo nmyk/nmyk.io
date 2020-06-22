@@ -179,9 +179,7 @@ MessageLoop:
 			}
 			c.Connections.Get(msg.FromUser.ID).UserName = msg.Content.(string)
 		}
-		if _, ok := Tmpchat.Get(c.Name); ok {
-			c.Broadcast(msg)
-		}
+		c.Broadcast(msg)
 	}
 }
 
