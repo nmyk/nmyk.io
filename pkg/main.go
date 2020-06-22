@@ -14,7 +14,7 @@ import (
 // notice, it feels like discovering a hidden treat.
 const bgAnimationDurationSeconds = 400
 
-type BgData struct {
+type bgData struct {
 	BgAnimationDuration int
 	BgAnimationDelay    int
 }
@@ -23,8 +23,8 @@ func getTemplate(desc string) *template.Template {
 	return template.Must(template.ParseFiles(fmt.Sprintf("web/templates/%s.gohtml", desc)))
 }
 
-func getBgData() BgData {
-	return BgData{
+func getBgData() bgData {
+	return bgData{
 		// If we do this on the frontend, users will see a split second of the background at
 		// 0s delay before it updates. This way the background looks the same for everyone
 		// _and_ there are no visible transient states that make the site look cheap while

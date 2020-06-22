@@ -22,6 +22,25 @@ var Tmpchat = &Chat{
 	Channels: make(map[string]*Channel),
 }
 
+func (ch *Chat) Get(channelName string) (*Channel, bool) {
+	ch.RLock()
+	channel, ok := ch.Channels[channelName]
+	ch.RUnlock()
+	return channel, ok
+}
+
+func (ch *Chat) Set(channelName string, channel *Channel) {
+	ch.Lock()
+	ch.Channels[channelName] = channel
+	ch.Unlock()
+}
+
+func (ch *Chat) Delete(channelName string) {
+	ch.Lock()
+	delete(ch.Channels, channelName)
+	ch.Unlock()
+}
+
 type Channel struct {
 	Name        string
 	Connections *Conns
@@ -34,12 +53,48 @@ type Conns struct {
 	Map map[string]*Conn
 }
 
+func (c *Conns) Get(userID string) *Conn {
+	c.RLock()
+	val := c.Map[userID]
+	c.RUnlock()
+	return val
+}
+
+func (c *Conns) Set(userID string, conn *Conn) {
+	c.Lock()
+	c.Map[userID] = conn
+	c.Unlock()
+}
+
+func (c *Conns) Delete(key string) {
+	c.Lock()
+	delete(c.Map, key)
+	c.Unlock()
+}
+
+func (c *Conns) Count() int {
+	c.RLock()
+	n := len(c.Map)
+	c.RUnlock()
+	return n
+}
+
+func (c *Conns) Range(f func(string, *Conn) bool) {
+	c.RLock()
+	defer c.RUnlock()
+	for userID, conn := range c.Map {
+		if next := f(userID, conn); !next {
+			return
+		}
+	}
+}
+
 type Conn struct {
 	WS       *websocket.Conn
 	UserName string
 }
 
-func (ch *Chat) AddChannelIfNotExists(channelName string) {
+func (ch *Chat) CreateIfNecessary(channelName string) {
 	if channelName == "" {
 		return
 	}
@@ -50,31 +105,27 @@ func (ch *Chat) AddChannelIfNotExists(channelName string) {
 		Messages:    make(chan *Message),
 		AnonIndex:   &i,
 	}
-	Tmpchat.Lock()
-	defer Tmpchat.Unlock()
-	if _, ok := Tmpchat.Channels[channelName]; !ok {
-		go c.run()
-		Tmpchat.Channels[channelName] = c
+	if _, ok := Tmpchat.Get(channelName); !ok {
+		go c.Run()
+		Tmpchat.Set(channelName, c)
 	}
 }
 
 func (c *Channel) GetUsers() []User {
-	c.Connections.RLock()
-	defer c.Connections.RUnlock()
-	users := make([]User, len(c.Connections.Map))
+	users := make([]User, c.Connections.Count())
 	i := 0
-	for userId := range c.Connections.Map {
-		users[i] = User{userId, (c.Connections.Map)[userId].UserName}
-		i++
-	}
+	c.Connections.Range(
+		func(userID string, conn *Conn) bool {
+			users[i] = User{userID, conn.UserName}
+			i++
+			return true
+		})
 	return users
 }
 
 func (c *Channel) AddUser() User {
 	user := User{uuid.New().String(), fmt.Sprintf("anon_%d", atomic.AddUint64(c.AnonIndex, 1))}
-	c.Connections.Lock()
-	c.Connections.Map[user.ID] = &Conn{nil, user.Name}
-	c.Connections.Unlock()
+	c.Connections.Set(user.ID, &Conn{nil, user.Name})
 	return user
 }
 
@@ -82,68 +133,60 @@ func (c *Channel) NameIsAvailable(userName string) bool {
 	if userName == "" {
 		return false
 	}
-	c.Connections.RLock()
-	defer c.Connections.RUnlock()
-	for userId := range c.Connections.Map {
-		if userName == c.Connections.Map[userId].UserName {
+	c.Connections.Range(func(userID string, conn *Conn) bool {
+		if userName == conn.UserName {
 			return false
 		}
-	}
+		return true
+	})
 	return true
 }
 
-func (c *Channel) run() {
-	defer c.close()
+func (c *Channel) Run() {
+	defer c.Close()
 MessageLoop:
-	for m := range c.Messages {
-		switch m.Type {
+	for msg := range c.Messages {
+		switch msg.Type {
 		case Entrance:
-			c.Connections.Lock()
-			c.Connections.Map[m.FromUser.ID].WS = m.fromConn
-			c.Connections.Unlock()
-			Reply(m,
+			// Associate this websocket conn with the new user.
+			c.Connections.Get(msg.FromUser.ID).WS = msg.fromConn
+			Reply(msg,
 				&Message{
 					wsMsgType:   1, // text
-					ChannelName: m.ChannelName,
+					ChannelName: msg.ChannelName,
 					Type:        Welcome,
 					Content:     c.GetUsers(),
 				})
 		case Exit:
-			c.Connections.Lock()
-			_ = c.Connections.Map[m.FromUser.ID].WS.Close()
-			delete(c.Connections.Map, m.FromUser.ID)
-			c.Connections.Unlock()
-			c.Connections.RLock()
-			if len(c.Connections.Map) == 0 {
+			_ = c.Connections.Get(msg.FromUser.ID).WS.Close()
+			c.Connections.Delete(msg.FromUser.ID)
+			if c.Connections.Count() == 0 {
 				return
 			}
-			c.Connections.RUnlock()
 		case NameChange:
-			if !c.NameIsAvailable(m.Content.(string)) {
+			if !c.NameIsAvailable(msg.Content.(string)) {
 				// a NameChange rejection is just a normal NameChange
 				// message telling you to change back to your old name.
-				Reply(m,
+				Reply(msg,
 					&Message{
 						wsMsgType: 1, // text
-						FromUser:  m.FromUser,
+						FromUser:  msg.FromUser,
 						Type:      NameChange,
-						Content:   m.FromUser.Name,
+						Content:   msg.FromUser.Name,
 					})
 				continue MessageLoop
 			}
-			c.Connections.Lock()
-			c.Connections.Map[m.FromUser.ID].UserName = m.Content.(string)
-			c.Connections.Unlock()
+			c.Connections.Get(msg.FromUser.ID).UserName = msg.Content.(string)
 		}
-		c.Broadcast(m)
+		if _, ok := Tmpchat.Get(c.Name); ok {
+			c.Broadcast(msg)
+		}
 	}
 }
 
-func (c *Channel) close() {
+func (c *Channel) Close() {
 	close(c.Messages)
-	Tmpchat.Lock()
-	delete(Tmpchat.Channels, c.Name)
-	Tmpchat.Unlock()
+	Tmpchat.Delete(c.Name)
 	log.Println(fmt.Sprintf("cleaned up empty channel %s", c.Name))
 }
 
@@ -157,14 +200,14 @@ func Reply(to *Message, reply *Message) {
 
 func (c *Channel) Broadcast(m *Message) {
 	out, _ := json.Marshal(m)
-	c.Connections.RLock()
-	defer c.Connections.RUnlock()
-	for id := range c.Connections.Map {
-		err := c.Connections.Map[id].WS.WriteMessage(m.wsMsgType, out)
+	c.Connections.Range(func(_ string, conn *Conn) bool {
+		err := conn.WS.WriteMessage(m.wsMsgType, out)
 		if err != nil {
 			log.Println("write:", err)
+			return false
 		}
-	}
+		return true
+	})
 }
 
 type Message struct {
@@ -216,14 +259,14 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		message.fromConn = c
 		message.wsMsgType = mt
-		Tmpchat.RLock()
-		Tmpchat.Channels[message.ChannelName].Messages <- message
-		Tmpchat.RUnlock()
+		if ch, ok := Tmpchat.Get(message.ChannelName); ok {
+			ch.Messages <- message
+		}
 	}
 }
 
-type TmpchatPageData struct {
-	BgData
+type tmpchatPageData struct {
+	bgData
 	ChannelName string
 	User        User
 	AppHost     string // So this works seamlessly in dev (localhost) and prod (tmpch.at)
@@ -237,9 +280,9 @@ func tmpchatHandler(w http.ResponseWriter, r *http.Request) {
 		tmpl = getTemplate("tmpchat-index")
 	} else {
 		tmpl = getTemplate("tmpchat-channel")
-		Tmpchat.AddChannelIfNotExists(channelName)
+		Tmpchat.CreateIfNecessary(channelName)
 		newUser = Tmpchat.Channels[channelName].AddUser()
 	}
-	d := TmpchatPageData{getBgData(), channelName, newUser, r.Host}
+	d := tmpchatPageData{getBgData(), channelName, newUser, r.Host}
 	_ = tmpl.Execute(w, d)
 }
