@@ -18,7 +18,7 @@ type Chat struct {
 	Channels map[string]*Channel
 }
 
-var Tmpchat = &Chat{
+var tmpchat = &Chat{
 	Channels: make(map[string]*Channel),
 }
 
@@ -102,9 +102,9 @@ func (ch *Chat) CreateIfNecessary(channelName string) *Channel {
 		Messages:  make(chan *Message),
 		AnonIndex: &i,
 	}
-	if existing, ok := Tmpchat.Get(channelName); !ok {
+	if existing, ok := ch.Get(channelName); !ok {
 		go c.Run()
-		Tmpchat.Set(channelName, c)
+		ch.Set(channelName, c)
 		return c
 	} else {
 		return existing
@@ -187,7 +187,7 @@ MessageLoop:
 
 func (c *Channel) Close() {
 	close(c.Messages)
-	Tmpchat.Delete(c.Name)
+	tmpchat.Delete(c.Name)
 	log.Println(fmt.Sprintf("cleaned up empty channel %s", c.Name))
 }
 
@@ -216,7 +216,7 @@ type Message struct {
 	wsMsgType   int         // Websocket message type as defined in RFC 6455, section 11.8
 	ChannelName string      `json:"channel_name"`
 	FromUser    User        `json:"from_user,omitempty"`
-	Type        EventType   `json:"type"` // Tmpchat-specific signaling event type
+	Type        EventType   `json:"type"` // tmpchat-specific signaling event type
 	Content     interface{} `json:"content"`
 }
 
@@ -260,7 +260,7 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		message.fromConn = c
 		message.wsMsgType = mt
-		if ch, ok := Tmpchat.Get(message.ChannelName); ok {
+		if ch, ok := tmpchat.Get(message.ChannelName); ok {
 			ch.Messages <- message
 		}
 	}
@@ -281,7 +281,7 @@ func tmpchatHandler(w http.ResponseWriter, r *http.Request) {
 		tmpl = getTemplate("tmpchat-index")
 	} else {
 		tmpl = getTemplate("tmpchat-channel")
-		channel := Tmpchat.CreateIfNecessary(channelName)
+		channel := tmpchat.CreateIfNecessary(channelName)
 		newUser = channel.AddUser()
 	}
 	d := tmpchatPageData{getBgData(), channelName, newUser, r.Host}
