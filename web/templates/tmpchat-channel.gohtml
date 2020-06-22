@@ -22,7 +22,7 @@
         const newMessage = (type, content) => {
             return {
                 "channel_name": unescape(window.location.pathname.substr(1)),
-                "from_user": {"id": myUserId, "name": document.getElementById("myname").value},
+                "from_user": {"id": myUserId, "name": myName},
                 "type": type,
                 "content": content
             };
@@ -224,12 +224,10 @@
                 if (myName === "") {
                     return false;
                 }
-                let message = {
-                    "channel_name": unescape(window.location.pathname.substr(1)),
-                    "from_user": {"id": myUserId, "name": myName},
-                    "type": SignalingEvent.NameChange,
-                    "content": he.escape(document.getElementById("myname").value)
-                };
+                let message = newMessage(
+                    SignalingEvent.NameChange,
+                    he.escape(document.getElementById("myname").value)
+                );
                 if (!ws) {
                     doNameChange(message);
                     return false;
