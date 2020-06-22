@@ -165,7 +165,6 @@ MessageLoop:
 			// A Welcome message lets new members know who else is here.
 			msg.Reply(
 				Message{
-					wsMsgType:   1, // text
 					ChannelName: msg.ChannelName,
 					Type:        Welcome,
 					Content:     c.GetUsers(),
@@ -184,10 +183,9 @@ MessageLoop:
 				// message telling you to change back to your old name.
 				msg.Reply(
 					Message{
-						wsMsgType: 1, // text
-						FromUser:  msg.FromUser,
-						Type:      NameChange,
-						Content:   msg.FromUser.Name,
+						FromUser: msg.FromUser,
+						Type:     NameChange,
+						Content:  msg.FromUser.Name,
 					})
 				continue MessageLoop
 			}
@@ -207,7 +205,7 @@ func (c *Channel) Close() {
 
 func (call Message) Reply(response Message) {
 	msg, _ := json.Marshal(response)
-	if err := call.fromConn.WriteMessage(response.wsMsgType, msg); err != nil {
+	if err := call.fromConn.WriteMessage(1, msg); err != nil {
 		log.Println("write:", err)
 	}
 }
@@ -215,7 +213,7 @@ func (call Message) Reply(response Message) {
 func (c *Channel) Broadcast(m Message) {
 	out, _ := json.Marshal(m)
 	c.Members.Range(func(_ string, conn *Conn) bool {
-		if err := conn.WS.WriteMessage(m.wsMsgType, out); err != nil {
+		if err := conn.WS.WriteMessage(1, out); err != nil {
 			log.Println("write:", err)
 		}
 		return true
@@ -224,7 +222,6 @@ func (c *Channel) Broadcast(m Message) {
 
 type Message struct {
 	fromConn    *websocket.Conn
-	wsMsgType   int         // Websocket message type as defined in RFC 6455, section 11.8
 	ChannelName string      `json:"channel_name"`
 	FromUser    User        `json:"from_user,omitempty"`
 	Type        EventType   `json:"type"` // tmpchat-specific signaling event type
@@ -259,7 +256,7 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for {
-		mt, rawSignal, err := c.ReadMessage()
+		_, rawSignal, err := c.ReadMessage()
 		if err != nil {
 			log.Println("read:", err)
 			break
@@ -270,7 +267,6 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		message.fromConn = c
-		message.wsMsgType = mt
 		if ch, ok := tmpchat.Get(message.ChannelName); ok {
 			ch.Messages <- message
 		}
