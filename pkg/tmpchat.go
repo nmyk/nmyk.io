@@ -159,23 +159,23 @@ MessageLoop:
 		case Entrance:
 			// Associate this websocket conn with the new user so we know
 			// which one to close when they send us an Exit.
-			if conn, ok := c.Members.Get(msg.FromUser.ID); ok {
+			if conn, ok := c.Members.Get(msg.FromUser.ID); ok && conn.WS == nil {
 				conn.WS = msg.fromConn
+				// A Welcome message lets new members know who else is here.
+				msg.Reply(
+					Message{
+						ChannelName: msg.ChannelName,
+						Type:        Welcome,
+						Content:     c.GetUsers(),
+					})
 			}
-			// A Welcome message lets new members know who else is here.
-			msg.Reply(
-				Message{
-					ChannelName: msg.ChannelName,
-					Type:        Welcome,
-					Content:     c.GetUsers(),
-				})
 		case Exit:
-			if conn, ok := c.Members.Get(msg.FromUser.ID); ok {
+			if conn, ok := c.Members.Get(msg.FromUser.ID); ok && msg.fromConn == conn.WS {
 				_ = conn.WS.Close()
 				c.Members.Delete(msg.FromUser.ID)
-			}
-			if c.Members.Count() == 0 {
-				return
+				if c.Members.Count() == 0 {
+					return
+				}
 			}
 		case NameChange:
 			if !c.NameIsAvailable(msg.Content.(string)) {
