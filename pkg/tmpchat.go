@@ -73,9 +73,13 @@ func (c *Members) Delete(userID string) {
 }
 
 func (c *Members) Count() int {
-	c.RLock()
-	n := len(c.Map)
-	c.RUnlock()
+	var n int
+	c.Range(func(_ string, conn *Conn) bool {
+		if conn.WS != nil {
+			n++
+		}
+		return true
+	})
 	return n
 }
 
@@ -125,6 +129,9 @@ func (c *Channel) GetUsers() []User {
 
 func (c *Channel) AddUser() User {
 	user := User{uuid.New().String(), fmt.Sprintf("anon_%d", atomic.AddUint64(c.AnonIndex, 1))}
+	for !c.NameIsAvailable(user.Name) {
+		user.Name = fmt.Sprintf("anon_%d", atomic.AddUint64(c.AnonIndex, 1))
+	}
 	c.Members.Set(user.ID, &Conn{nil, user.Name})
 	return user
 }
