@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"sync"
 	"sync/atomic"
@@ -252,7 +253,11 @@ const (
 func signalingHandler(w http.ResponseWriter, r *http.Request) {
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(*http.Request) bool {
-			return true // TODO: make this actually check the origin in a good way
+			originURL, err := url.Parse(r.Header["Origin"][0])
+			if err != nil {
+				return false
+			}
+			return originURL.Host == os.Getenv("TMPCHAT_HOST")
 		},
 	}
 	c, err := upgrader.Upgrade(w, r, nil)
@@ -297,7 +302,6 @@ func tmpchatHandler(w http.ResponseWriter, r *http.Request) {
 		tmpl = getTemplate("tmpchat-index", fm)
 	} else {
 		tmpl = getTemplate("tmpchat-channel", fm)
-		log.Println(fmt.Sprintf("%v", tmpl))
 		channel := tmpchat.CreateIfNecessary(channelName)
 		newUser = channel.AddUser()
 	}
