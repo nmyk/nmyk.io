@@ -42,44 +42,44 @@ func (ch *Chat) Delete(channelName string) {
 }
 
 type Channel struct {
-	Name        string
-	Connections *Conns
-	Messages    chan *Message
-	AnonIndex   *uint64
+	Name      string
+	Members   *Members
+	Messages  chan *Message
+	AnonIndex *uint64
 }
 
-type Conns struct {
+type Members struct {
 	sync.RWMutex
 	Map map[string]*Conn
 }
 
-func (c *Conns) Get(userID string) *Conn {
+func (c *Members) Get(userID string) *Conn {
 	c.RLock()
 	conn := c.Map[userID]
 	c.RUnlock()
 	return conn
 }
 
-func (c *Conns) Set(userID string, conn *Conn) {
+func (c *Members) Set(userID string, conn *Conn) {
 	c.Lock()
 	c.Map[userID] = conn
 	c.Unlock()
 }
 
-func (c *Conns) Delete(userID string) {
+func (c *Members) Delete(userID string) {
 	c.Lock()
 	delete(c.Map, userID)
 	c.Unlock()
 }
 
-func (c *Conns) Count() int {
+func (c *Members) Count() int {
 	c.RLock()
 	n := len(c.Map)
 	c.RUnlock()
 	return n
 }
 
-func (c *Conns) Range(f func(string, *Conn) bool) {
+func (c *Members) Range(f func(string, *Conn) bool) {
 	c.RLock()
 	defer c.RUnlock()
 	for userID, conn := range c.Map {
@@ -97,10 +97,10 @@ type Conn struct {
 func (ch *Chat) CreateIfNecessary(channelName string) *Channel {
 	var i uint64
 	c := &Channel{
-		Name:        channelName,
-		Connections: &Conns{Map: make(map[string]*Conn)},
-		Messages:    make(chan *Message),
-		AnonIndex:   &i,
+		Name:      channelName,
+		Members:   &Members{Map: make(map[string]*Conn)},
+		Messages:  make(chan *Message),
+		AnonIndex: &i,
 	}
 	if existing, ok := Tmpchat.Get(channelName); !ok {
 		go c.Run()
@@ -112,9 +112,9 @@ func (ch *Chat) CreateIfNecessary(channelName string) *Channel {
 }
 
 func (c *Channel) GetUsers() []User {
-	users := make([]User, c.Connections.Count())
+	users := make([]User, c.Members.Count())
 	i := 0
-	c.Connections.Range(
+	c.Members.Range(
 		func(userID string, conn *Conn) bool {
 			users[i] = User{userID, conn.UserName}
 			i++
@@ -125,7 +125,7 @@ func (c *Channel) GetUsers() []User {
 
 func (c *Channel) AddUser() User {
 	user := User{uuid.New().String(), fmt.Sprintf("anon_%d", atomic.AddUint64(c.AnonIndex, 1))}
-	c.Connections.Set(user.ID, &Conn{nil, user.Name})
+	c.Members.Set(user.ID, &Conn{nil, user.Name})
 	return user
 }
 
@@ -133,13 +133,15 @@ func (c *Channel) NameIsAvailable(userName string) bool {
 	if userName == "" {
 		return false
 	}
-	c.Connections.Range(func(userID string, conn *Conn) bool {
+	isAvailable := true
+	c.Members.Range(func(userID string, conn *Conn) bool {
 		if userName == conn.UserName {
+			isAvailable = false
 			return false
 		}
 		return true
 	})
-	return true
+	return isAvailable
 }
 
 func (c *Channel) Run() {
@@ -150,7 +152,7 @@ MessageLoop:
 		case Entrance:
 			// Associate this websocket conn with the new user so we know
 			// which one to close when they send us an Exit.
-			c.Connections.Get(msg.FromUser.ID).WS = msg.fromConn
+			c.Members.Get(msg.FromUser.ID).WS = msg.fromConn
 			Reply(msg,
 				&Message{
 					wsMsgType:   1, // text
@@ -159,9 +161,9 @@ MessageLoop:
 					Content:     c.GetUsers(),
 				})
 		case Exit:
-			_ = c.Connections.Get(msg.FromUser.ID).WS.Close()
-			c.Connections.Delete(msg.FromUser.ID)
-			if c.Connections.Count() == 0 {
+			_ = c.Members.Get(msg.FromUser.ID).WS.Close()
+			c.Members.Delete(msg.FromUser.ID)
+			if c.Members.Count() == 0 {
 				return
 			}
 		case NameChange:
@@ -177,7 +179,7 @@ MessageLoop:
 					})
 				continue MessageLoop
 			}
-			c.Connections.Get(msg.FromUser.ID).UserName = msg.Content.(string)
+			c.Members.Get(msg.FromUser.ID).UserName = msg.Content.(string)
 		}
 		c.Broadcast(msg)
 	}
@@ -199,7 +201,7 @@ func Reply(to *Message, reply *Message) {
 
 func (c *Channel) Broadcast(m *Message) {
 	out, _ := json.Marshal(m)
-	c.Connections.Range(func(_ string, conn *Conn) bool {
+	c.Members.Range(func(_ string, conn *Conn) bool {
 		err := conn.WS.WriteMessage(m.wsMsgType, out)
 		if err != nil {
 			log.Println("write:", err)
