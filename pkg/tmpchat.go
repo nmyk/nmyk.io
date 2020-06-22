@@ -94,10 +94,7 @@ type Conn struct {
 	UserName string
 }
 
-func (ch *Chat) CreateIfNecessary(channelName string) {
-	if channelName == "" {
-		return
-	}
+func (ch *Chat) CreateIfNecessary(channelName string) *Channel {
 	var i uint64
 	c := &Channel{
 		Name:        channelName,
@@ -105,9 +102,12 @@ func (ch *Chat) CreateIfNecessary(channelName string) {
 		Messages:    make(chan *Message),
 		AnonIndex:   &i,
 	}
-	if _, ok := Tmpchat.Get(channelName); !ok {
+	if existing, ok := Tmpchat.Get(channelName); !ok {
 		go c.Run()
 		Tmpchat.Set(channelName, c)
+		return c
+	} else {
+		return existing
 	}
 }
 
@@ -148,7 +148,8 @@ MessageLoop:
 	for msg := range c.Messages {
 		switch msg.Type {
 		case Entrance:
-			// Associate this websocket conn with the new user.
+			// Associate this websocket conn with the new user so we know
+			// which one to close when they send us an Exit.
 			c.Connections.Get(msg.FromUser.ID).WS = msg.fromConn
 			Reply(msg,
 				&Message{
@@ -165,7 +166,7 @@ MessageLoop:
 			}
 		case NameChange:
 			if !c.NameIsAvailable(msg.Content.(string)) {
-				// a NameChange rejection is just a normal NameChange
+				// a NameChange rejection is just another NameChange
 				// message telling you to change back to your old name.
 				Reply(msg,
 					&Message{
@@ -280,8 +281,8 @@ func tmpchatHandler(w http.ResponseWriter, r *http.Request) {
 		tmpl = getTemplate("tmpchat-index")
 	} else {
 		tmpl = getTemplate("tmpchat-channel")
-		Tmpchat.CreateIfNecessary(channelName)
-		newUser = Tmpchat.Channels[channelName].AddUser()
+		channel := Tmpchat.CreateIfNecessary(channelName)
+		newUser = channel.AddUser()
 	}
 	d := tmpchatPageData{getBgData(), channelName, newUser, r.Host}
 	_ = tmpl.Execute(w, d)
