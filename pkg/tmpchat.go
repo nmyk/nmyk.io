@@ -153,7 +153,6 @@ func (c *Channel) NameIsAvailable(userName string) bool {
 
 func (c *Channel) Run() {
 	defer c.Close()
-MessageLoop:
 	for msg := range c.Messages {
 		switch msg.Type {
 		case Entrance:
@@ -168,6 +167,8 @@ MessageLoop:
 						Type:        Welcome,
 						Content:     c.GetUsers(),
 					})
+			} else {
+				continue
 			}
 		case Exit:
 			if conn, ok := c.Members.Get(msg.FromUser.ID); ok && msg.fromConn == conn.WS {
@@ -176,6 +177,8 @@ MessageLoop:
 				if c.Members.Count() == 0 {
 					return
 				}
+			} else {
+				continue
 			}
 		case NameChange:
 			if !c.NameIsAvailable(msg.Content.(string)) {
@@ -187,10 +190,12 @@ MessageLoop:
 						Type:     NameChange,
 						Content:  msg.FromUser.Name,
 					})
-				continue MessageLoop
+				continue
 			}
-			if conn, ok := c.Members.Get(msg.FromUser.ID); ok {
+			if conn, ok := c.Members.Get(msg.FromUser.ID); ok && msg.fromConn == conn.WS {
 				conn.UserName = msg.Content.(string)
+			} else {
+				continue
 			}
 		}
 		c.Broadcast(msg)
@@ -224,7 +229,7 @@ type Message struct {
 	fromConn    *websocket.Conn
 	ChannelName string      `json:"channel_name"`
 	FromUser    User        `json:"from_user,omitempty"`
-	Type        EventType   `json:"type"` // tmpchat-specific signaling event type
+	Type        EventType   `json:"type"`
 	Content     interface{} `json:"content"`
 }
 
