@@ -44,7 +44,7 @@ func (ch *Chat) Delete(channelName string) {
 type Channel struct {
 	Name      string
 	Members   *Members
-	Messages  chan *Message
+	Messages  chan Message
 	AnonIndex *uint64
 }
 
@@ -53,11 +53,11 @@ type Members struct {
 	Map map[string]*Conn
 }
 
-func (c *Members) Get(userID string) *Conn {
+func (c *Members) Get(userID string) (*Conn, bool) {
 	c.RLock()
-	conn := c.Map[userID]
+	conn, ok := c.Map[userID]
 	c.RUnlock()
-	return conn
+	return conn, ok
 }
 
 func (c *Members) Set(userID string, conn *Conn) {
@@ -99,7 +99,7 @@ func (ch *Chat) CreateIfNecessary(channelName string) *Channel {
 	c := &Channel{
 		Name:      channelName,
 		Members:   &Members{Map: make(map[string]*Conn)},
-		Messages:  make(chan *Message),
+		Messages:  make(chan Message),
 		AnonIndex: &i,
 	}
 	if existing, ok := ch.Get(channelName); !ok {
@@ -152,17 +152,22 @@ MessageLoop:
 		case Entrance:
 			// Associate this websocket conn with the new user so we know
 			// which one to close when they send us an Exit.
-			c.Members.Get(msg.FromUser.ID).WS = msg.fromConn
-			Reply(msg,
-				&Message{
+			if conn, ok := c.Members.Get(msg.FromUser.ID); ok {
+				conn.WS = msg.fromConn
+			}
+			// A Welcome message lets new members know who else is here.
+			msg.Reply(
+				Message{
 					wsMsgType:   1, // text
 					ChannelName: msg.ChannelName,
 					Type:        Welcome,
 					Content:     c.GetUsers(),
 				})
 		case Exit:
-			_ = c.Members.Get(msg.FromUser.ID).WS.Close()
-			c.Members.Delete(msg.FromUser.ID)
+			if conn, ok := c.Members.Get(msg.FromUser.ID); ok {
+				_ = conn.WS.Close()
+				c.Members.Delete(msg.FromUser.ID)
+			}
 			if c.Members.Count() == 0 {
 				return
 			}
@@ -170,8 +175,8 @@ MessageLoop:
 			if !c.NameIsAvailable(msg.Content.(string)) {
 				// a NameChange rejection is just another NameChange
 				// message telling you to change back to your old name.
-				Reply(msg,
-					&Message{
+				msg.Reply(
+					Message{
 						wsMsgType: 1, // text
 						FromUser:  msg.FromUser,
 						Type:      NameChange,
@@ -179,7 +184,9 @@ MessageLoop:
 					})
 				continue MessageLoop
 			}
-			c.Members.Get(msg.FromUser.ID).UserName = msg.Content.(string)
+			if conn, ok := c.Members.Get(msg.FromUser.ID); ok {
+				conn.UserName = msg.Content.(string)
+			}
 		}
 		c.Broadcast(msg)
 	}
@@ -191,21 +198,18 @@ func (c *Channel) Close() {
 	log.Println(fmt.Sprintf("cleaned up empty channel %s", c.Name))
 }
 
-func Reply(to *Message, reply *Message) {
-	m, _ := json.Marshal(reply)
-	err := to.fromConn.WriteMessage(reply.wsMsgType, m)
-	if err != nil {
+func (call Message) Reply(response Message) {
+	msg, _ := json.Marshal(response)
+	if err := call.fromConn.WriteMessage(response.wsMsgType, msg); err != nil {
 		log.Println("write:", err)
 	}
 }
 
-func (c *Channel) Broadcast(m *Message) {
+func (c *Channel) Broadcast(m Message) {
 	out, _ := json.Marshal(m)
 	c.Members.Range(func(_ string, conn *Conn) bool {
-		err := conn.WS.WriteMessage(m.wsMsgType, out)
-		if err != nil {
+		if err := conn.WS.WriteMessage(m.wsMsgType, out); err != nil {
 			log.Println("write:", err)
-			return false
 		}
 		return true
 	})
@@ -254,8 +258,8 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		log.Printf("recv: %s", rawSignal)
-		message := &Message{}
-		if err := json.Unmarshal(rawSignal, message); err != nil {
+		message := Message{}
+		if err := json.Unmarshal(rawSignal, &message); err != nil {
 			continue
 		}
 		message.fromConn = c

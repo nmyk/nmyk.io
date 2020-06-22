@@ -11,7 +11,7 @@
     <meta name="description" content="tmpchat is a WebRTC-based group text messaging application designed and built by Nick Mykins (nmyk.io)"/>
     <title>tmpchat</title>
     <script>
-        const getChannelUrl = channelName => "http://{{.AppHost}}/" + channelName;
+        const getChannelURL = channelName => "http://{{.AppHost}}/" + channelName;
         const uuidv4 = () => {
             return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
                 (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
@@ -25,9 +25,9 @@
         // Start a new chat whose ChannelName is an RFC-4648 base64url encoded v4 UUID without
         // hyphens. This ensures that the channel will be will be unique, at least insofar as
         // UUIDs are unique. Which is inso-extremely-far.
-        const newChannelName = () => hexToBase64URL(uuidv4().replace(/-/g, ""));
-        // Otherwise you can pick whatever channel you want.
-        const setDestChannel = () => document.getElementById('channel').action = getChannelUrl(escape(document.getElementById("channelnameinput").value));
+        const newChannelURL = () => getChannelURL(hexToBase64URL(uuidv4().replace(/-/g, "")));
+        // Otherwise you can pick whatever channel name you want.
+        const setDestChannel = () => document.getElementById('channel').action = getChannelURL(escape(document.getElementById("channelnameinput").value));
     </script>
 </head>
 
@@ -40,7 +40,7 @@
 <b>tmpchat</b><br>
 simple peer-to-peer text messaging
 <div class="container" style="text-align: center;">
-    <input type="button" value="create" onclick="window.location = getChannelUrl(newChannelName());">
+    <input type="button" value="create" onclick="window.location = newChannelURL();">
     <br><br>
     or
     <br><br>
