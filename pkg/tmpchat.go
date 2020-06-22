@@ -55,9 +55,9 @@ type Conns struct {
 
 func (c *Conns) Get(userID string) *Conn {
 	c.RLock()
-	val := c.Map[userID]
+	conn := c.Map[userID]
 	c.RUnlock()
-	return val
+	return conn
 }
 
 func (c *Conns) Set(userID string, conn *Conn) {
@@ -66,9 +66,9 @@ func (c *Conns) Set(userID string, conn *Conn) {
 	c.Unlock()
 }
 
-func (c *Conns) Delete(key string) {
+func (c *Conns) Delete(userID string) {
 	c.Lock()
-	delete(c.Map, key)
+	delete(c.Map, userID)
 	c.Unlock()
 }
 
