@@ -158,9 +158,9 @@ func (c *Channel) Run() {
 	for msg := range c.Messages {
 		switch msg.Type {
 		case Entrance:
-			// Associate this websocket member with the new user so we know
-			// which one to close when they send us an Exit.
 			if member, ok := c.Members.Get(msg.FromUser.ID); ok && member.Conn == nil {
+				// Associate this websocket connection with the new user so we know
+				// which one to close when they send us an Exit.
 				member.Conn = msg.fromConn
 				// A Welcome message lets new members know who else is here.
 				msg.Reply(

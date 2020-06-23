@@ -44,7 +44,6 @@ const shouldStackMsg = (message, lastMsgElement) => {
         return false;
     }
     let lastMsgUserId = lastMsgElement.firstElementChild.firstElementChild.className;
-    console.log(lastMsgElement);
     return message["from_user"]["id"] === lastMsgUserId;
 };
 
@@ -180,10 +179,8 @@ window.addEventListener("load", () => {
 
     ws.onmessage = event => {
         let message = JSON.parse(event.data);
-        console.log(message);
         switch (message.type) {
             case SignalingEvent.Entrance:
-                console.log("entrance");
                 if (message["from_user"]["id"] !== myUserId) {
                     addNewRTCPeerConn(message["from_user"], false); // "remote" means "already here"
                 }
@@ -211,7 +208,6 @@ window.addEventListener("load", () => {
                 }
                 break;
             case SignalingEvent.RTCOffer:
-                console.log("rtc offer");
                 if (message["from_user"]["id"] !== myUserId) {
                     rtcPeerConns[message["from_user"]["id"]]["conn"].ondatachannel = function(event) {
                         event.channel.onmessage = e => write(JSON.parse(e.data));
