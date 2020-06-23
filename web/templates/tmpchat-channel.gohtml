@@ -1,4 +1,5 @@
 <html>
+<!-- Questions? Comments? Concerns? Let us know what you think: 1-800-TMP-CHAT@nmyk.io -->
 <head>
     <link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet">
     <link href="https://cdn.nmyk.io/assets/style-new.css" rel="stylesheet">
@@ -16,7 +17,9 @@
             "Exit": 2,
             "NameChange": 3,
             "Clear": 4,
-            "Welcome": 5
+            "Welcome": 5,
+            "RTCOffer": 6,
+            "RTCAnswer": 7
         };
 
         const newMessage = (type, content) => {
@@ -31,7 +34,7 @@
         const nameTag = (message, isFromMe) => {
             let tag = document.createElement("div");
             let name = document.createElement("span");
-            name.className = myUserId;
+            name.className = message["from_user"]["id"];
             name.innerHTML = message["from_user"]["name"];
             tag.appendChild(name);
             if (isFromMe) {
@@ -53,6 +56,7 @@
                 return false;
             }
             let lastMsgUserId = lastMsgElement.firstElementChild.firstElementChild.className;
+            console.log(lastMsgElement);
             return message["from_user"]["id"] === lastMsgUserId;
         };
 
@@ -126,6 +130,10 @@
             }
         };
 
+        const info = txt => {
+            document.getElementById("info").innerText = txt;
+        };
+
         const myUserId = "{{.User.ID}}";
         let myName = "{{.User.Name}}";
 
@@ -133,6 +141,38 @@
             const input = document.getElementById("messagetext");
 
             let ws = new WebSocket("ws://{{.SignalingHost|safeURL}}");
+
+            let pc = new RTCPeerConnection({
+                iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+            });
+
+            let dataChannel = pc.createDataChannel(unescape(window.location.pathname.substr(1)));
+
+            dataChannel.onclose = () => console.log('sendChannel has closed');
+
+            dataChannel.onopen = () => console.log('sendChannel has opened');
+
+            dataChannel.onmessage = event => write(JSON.parse(event.data));
+
+            pc.oniceconnectionstatechange = () => info(pc.iceConnectionState);
+
+            pc.onicecandidate = event => {
+                if (event.candidate === null) {
+                    let desc = btoa(JSON.stringify(pc.localDescription));
+                    let msg = newMessage(SignalingEvent.RTCOffer, desc);
+                    ws.send(JSON.stringify(msg));
+                }
+            };
+
+            pc.onnegotiationneeded = () =>
+                pc.createOffer().then(d => pc.setLocalDescription(d)).catch(info);
+
+            pc.ondatachannel = function(event) {
+                let recvChannel = event.channel;
+                recvChannel.onmessage = function(event) {
+                    write(JSON.parse(event.data))
+                };
+            };
 
             ws.onopen = () => {
                 let nametag = document.createElement("span");
@@ -174,6 +214,25 @@
                            doEntrance(message["content"][i])
                         }
                         break;
+                    case SignalingEvent.RTCOffer:
+                        if (message["from_user"]["id"] === myUserId) {
+                            break;
+                        }
+                        let offerDesc = JSON.parse(atob(message["content"]));
+                        pc.setRemoteDescription(new RTCSessionDescription(offerDesc))
+                          .then(() => pc.createAnswer())
+                          .then(answer => pc.setLocalDescription(answer))
+                          .then(() => {
+                                let desc = btoa(JSON.stringify(pc.localDescription));
+                                let response = newMessage(SignalingEvent.RTCAnswer, desc);
+                                response["to_user_id"] = message["from_user"]["id"];
+                                ws.send(JSON.stringify(response));
+                          })
+                         .catch(info);
+                        break;
+                    case SignalingEvent.RTCAnswer:
+                        let answerDesc = JSON.parse(atob(message["content"]));
+                        pc.setRemoteDescription(new RTCSessionDescription(answerDesc)).catch(e => info('!!' + e));
                 }
             };
 
@@ -208,7 +267,7 @@
                 }
                 let msg = newMessage(0, input.value);
                 write(msg);
-                // TODO: send on webRTC data channel
+                dataChannel.send(JSON.stringify(msg));
                 input.value = "";
                 return false;
             };
@@ -289,7 +348,7 @@
 
     <br>
 
-    <div style="text-align: center;">connected</div>
+    <div id="info" style="text-align: center;"></div>
 </div>
 </body>
 

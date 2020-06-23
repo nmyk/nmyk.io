@@ -21,7 +21,9 @@ type bgData struct {
 }
 
 func getTemplate(desc string, funcMap template.FuncMap) *template.Template {
-	t, _ := ioutil.ReadFile(fmt.Sprintf("web/templates/%s.gohtml", desc))
+	t, _ := ioutil.ReadFile(
+		fmt.Sprintf("web/templates/%s.gohtml", desc),
+	)
 	return template.Must(template.New(desc).Funcs(funcMap).Parse(string(t)))
 }
 

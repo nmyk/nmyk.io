@@ -52,32 +52,32 @@ type Channel struct {
 
 type Members struct {
 	sync.RWMutex
-	Map map[string]*Conn
+	Map map[string]*Member
 }
 
-func (c *Members) Get(userID string) (*Conn, bool) {
+func (c *Members) Get(id string) (*Member, bool) {
 	c.RLock()
-	conn, ok := c.Map[userID]
+	member, ok := c.Map[id]
 	c.RUnlock()
-	return conn, ok
+	return member, ok
 }
 
-func (c *Members) Set(userID string, conn *Conn) {
+func (c *Members) Set(id string, member *Member) {
 	c.Lock()
-	c.Map[userID] = conn
+	c.Map[id] = member
 	c.Unlock()
 }
 
-func (c *Members) Delete(userID string) {
+func (c *Members) Delete(id string) {
 	c.Lock()
-	delete(c.Map, userID)
+	delete(c.Map, id)
 	c.Unlock()
 }
 
 func (c *Members) Count() int {
 	var n int
-	c.Range(func(_ string, conn *Conn) bool {
-		if conn.WS != nil {
+	c.Range(func(_ string, member *Member) bool {
+		if member.Conn != nil {
 			n++
 		}
 		return true
@@ -85,26 +85,26 @@ func (c *Members) Count() int {
 	return n
 }
 
-func (c *Members) Range(f func(string, *Conn) bool) {
+func (c *Members) Range(f func(string, *Member) bool) {
 	c.RLock()
 	defer c.RUnlock()
-	for userID, conn := range c.Map {
-		if next := f(userID, conn); !next {
+	for id, member := range c.Map {
+		if next := f(id, member); !next {
 			return
 		}
 	}
 }
 
-type Conn struct {
-	WS       *websocket.Conn
-	UserName string
+type Member struct {
+	Conn *websocket.Conn
+	Name string
 }
 
 func (ch *Chat) CreateIfNecessary(channelName string) *Channel {
 	var i uint64
 	c := &Channel{
 		Name:      channelName,
-		Members:   &Members{Map: make(map[string]*Conn)},
+		Members:   &Members{Map: make(map[string]*Member)},
 		Messages:  make(chan Message),
 		AnonIndex: &i,
 	}
@@ -117,24 +117,24 @@ func (ch *Chat) CreateIfNecessary(channelName string) *Channel {
 	}
 }
 
-func (c *Channel) GetUsers() []User {
+func (c *Channel) GetMembers() []User {
 	users := make([]User, c.Members.Count())
 	i := 0
 	c.Members.Range(
-		func(userID string, conn *Conn) bool {
-			users[i] = User{userID, conn.UserName}
+		func(id string, member *Member) bool {
+			users[i] = User{id, member.Name}
 			i++
 			return true
 		})
 	return users
 }
 
-func (c *Channel) AddUser() User {
+func (c *Channel) AddMember() User {
 	user := User{uuid.New().String(), fmt.Sprintf("anon_%d", atomic.AddUint64(c.AnonIndex, 1))}
 	for !c.NameIsAvailable(user.Name) {
 		user.Name = fmt.Sprintf("anon_%d", atomic.AddUint64(c.AnonIndex, 1))
 	}
-	c.Members.Set(user.ID, &Conn{nil, user.Name})
+	c.Members.Set(user.ID, &Member{nil, user.Name})
 	return user
 }
 
@@ -143,8 +143,8 @@ func (c *Channel) NameIsAvailable(userName string) bool {
 		return false
 	}
 	isAvailable := true
-	c.Members.Range(func(userID string, conn *Conn) bool {
-		if userName == conn.UserName {
+	c.Members.Range(func(id string, member *Member) bool {
+		if userName == member.Name {
 			isAvailable = false
 			return false
 		}
@@ -158,22 +158,22 @@ func (c *Channel) Run() {
 	for msg := range c.Messages {
 		switch msg.Type {
 		case Entrance:
-			// Associate this websocket conn with the new user so we know
+			// Associate this websocket member with the new user so we know
 			// which one to close when they send us an Exit.
-			if conn, ok := c.Members.Get(msg.FromUser.ID); ok && conn.WS == nil {
-				conn.WS = msg.fromConn
+			if member, ok := c.Members.Get(msg.FromUser.ID); ok && member.Conn == nil {
+				member.Conn = msg.fromConn
 				// A Welcome message lets new members know who else is here.
 				msg.Reply(
 					Message{
 						Type:    Welcome,
-						Content: c.GetUsers(),
+						Content: c.GetMembers(),
 					})
 			} else {
 				continue
 			}
 		case Exit:
-			if conn, ok := c.Members.Get(msg.FromUser.ID); ok && msg.fromConn == conn.WS {
-				_ = conn.WS.Close()
+			if member, ok := c.Members.Get(msg.FromUser.ID); ok && msg.fromConn == member.Conn {
+				_ = member.Conn.Close()
 				c.Members.Delete(msg.FromUser.ID)
 				if c.Members.Count() == 0 {
 					return
@@ -193,8 +193,14 @@ func (c *Channel) Run() {
 					})
 				continue
 			}
-			if conn, ok := c.Members.Get(msg.FromUser.ID); ok && msg.fromConn == conn.WS {
-				conn.UserName = msg.Content.(string)
+			if member, ok := c.Members.Get(msg.FromUser.ID); ok && msg.fromConn == member.Conn {
+				member.Name = msg.Content.(string)
+			} else {
+				continue
+			}
+		case RTCAnswer:
+			if member, ok := c.Members.Get(msg.ToUserID); ok {
+				msg.SendTo(member)
 			} else {
 				continue
 			}
@@ -209,17 +215,24 @@ func (c *Channel) Close() {
 	log.Println(fmt.Sprintf("cleaned up empty channel %s", c.Name))
 }
 
-func (call Message) Reply(response Message) {
-	msg, _ := json.Marshal(response)
-	if err := call.fromConn.WriteMessage(1, msg); err != nil {
+func (m Message) Reply(msg Message) {
+	response, _ := json.Marshal(msg)
+	if err := m.fromConn.WriteMessage(1, response); err != nil {
 		log.Println("write:", err)
 	}
 }
 
-func (c *Channel) Broadcast(m Message) {
-	out, _ := json.Marshal(m)
-	c.Members.Range(func(_ string, conn *Conn) bool {
-		if err := conn.WS.WriteMessage(1, out); err != nil {
+func (m Message) SendTo(member *Member) {
+	message, _ := json.Marshal(m)
+	if err := member.Conn.WriteMessage(1, message); err != nil {
+		log.Println("write:", err)
+	}
+}
+
+func (c *Channel) Broadcast(msg Message) {
+	message, _ := json.Marshal(msg)
+	c.Members.Range(func(_ string, member *Member) bool {
+		if err := member.Conn.WriteMessage(1, message); err != nil {
 			log.Println("write:", err)
 		}
 		return true
@@ -228,8 +241,9 @@ func (c *Channel) Broadcast(m Message) {
 
 type Message struct {
 	fromConn    *websocket.Conn
-	ChannelName string      `json:"channel_name"`
+	ChannelName string      `json:"channel_name,omitempty"`
 	FromUser    User        `json:"from_user,omitempty"`
+	ToUserID    string      `json:"to_user_id,omitempty"`
 	Type        EventType   `json:"type"`
 	Content     interface{} `json:"content"`
 }
@@ -248,6 +262,8 @@ const (
 	NameChange
 	Clear
 	Welcome
+	RTCOffer
+	RTCAnswer
 )
 
 func signalingHandler(w http.ResponseWriter, r *http.Request) {
@@ -303,7 +319,7 @@ func tmpchatHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		tmpl = getTemplate("tmpchat-channel", fm)
 		channel := tmpchat.CreateIfNecessary(channelName)
-		newUser = channel.AddUser()
+		newUser = channel.AddMember()
 	}
 	d := tmpchatPageData{getBgData(),
 		channelName,

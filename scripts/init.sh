@@ -3,7 +3,7 @@
 
 export COMPOSE_FILE=$1
 
-domains=(nmyk.io www.nmyk.io nickmykins.com www.nickmykins.com)
+domains=(nmyk.io www.nmyk.io nickmykins.com www.nickmykins.com tmpch.at s.tmpch.at)
 rsa_key_size=4096
 data_path="./data/certbot"
 email="nick@nmyk.io"
