@@ -2,6 +2,7 @@
 # Adapted from Philipp's script: https://github.com/wmnnd/nginx-certbot/blob/master/init-letsencrypt.sh
 
 export COMPOSE_FILE=$1
+export APP_ENVIRONMENT=prod
 
 domains=(nmyk.io www.nmyk.io nickmykins.com www.nickmykins.com tmpch.at s.tmpch.at)
 rsa_key_size=4096
