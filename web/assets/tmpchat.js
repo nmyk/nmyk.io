@@ -7,7 +7,8 @@ const SignalingEvent = {
     "Clear": 4,
     "Welcome": 5,
     "RTCOffer": 6,
-    "RTCAnswer": 7
+    "RTCAnswer": 7,
+    "RTCICECandidate": 8
 };
 
 const newMessage = (type, content) => {
@@ -168,6 +169,11 @@ window.addEventListener("load", () => {
                     let msg = newMessage(SignalingEvent.RTCOffer, desc);
                     msg["to_user_id"] = member["id"];
                     ws.send(JSON.stringify(msg));
+                } else {
+                    let desc = btoa(JSON.stringify(event.candidate));
+                    let msg = newMessage(SignalingEvent.RTCICECandidate, desc);
+                    msg["to_user_id"] = member["id"];
+                    ws.send(JSON.stringify(msg));
                 }
             };
         }
@@ -175,6 +181,25 @@ window.addEventListener("load", () => {
         rtcPeerConns[member["id"]] = {
             "conn": pc,
         };
+    };
+
+    const answerRTCOffer = message => {
+        rtcPeerConns[message["from_user"]["id"]]["conn"].ondatachannel = function (event) {
+            event.channel.onmessage = e => write(JSON.parse(e.data));
+            rtcPeerConns[message["from_user"]["id"]]["dataChannel"] = event.channel;
+        };
+        let offerDesc = JSON.parse(atob(message["content"]));
+        let peerConn = rtcPeerConns[message["from_user"]["id"]]["conn"];
+        peerConn.setRemoteDescription(new RTCSessionDescription(offerDesc))
+            .then(() => peerConn.createAnswer())
+            .then(answer => peerConn.setLocalDescription(answer))
+            .then(() => {
+                let desc = btoa(JSON.stringify(peerConn.localDescription));
+                let response = newMessage(SignalingEvent.RTCAnswer, desc);
+                response["to_user_id"] = message["from_user"]["id"];
+                ws.send(JSON.stringify(response));
+            })
+            .catch(info);
     };
 
     ws.onmessage = event => {
@@ -208,32 +233,19 @@ window.addEventListener("load", () => {
                 }
                 break;
             case SignalingEvent.RTCOffer:
-                if (message["from_user"]["id"] !== myUserId) {
-                    rtcPeerConns[message["from_user"]["id"]]["conn"].ondatachannel = function(event) {
-                        event.channel.onmessage = e => write(JSON.parse(e.data));
-                        rtcPeerConns[message["from_user"]["id"]]["dataChannel"] = event.channel;
-                    };
-                    let offerDesc = JSON.parse(atob(message["content"]));
-                    let peerConn = rtcPeerConns[message["from_user"]["id"]]["conn"];
-                    peerConn.setRemoteDescription(new RTCSessionDescription(offerDesc))
-                        .then(() => peerConn.createAnswer())
-                        .then(answer => peerConn.setLocalDescription(answer))
-                        .then(() => {
-                            let desc = btoa(JSON.stringify(peerConn.localDescription));
-                            let response = newMessage(SignalingEvent.RTCAnswer, desc);
-                            response["to_user_id"] = message["from_user"]["id"];
-                            ws.send(JSON.stringify(response));
-                        })
-                        .catch(info);
-                }
+                answerRTCOffer(message);
                 break;
             case SignalingEvent.RTCAnswer:
-                if (message["from_user"]["id"] !== myUserId) {
-                    let answerDesc = JSON.parse(atob(message["content"]));
-                    rtcPeerConns[message["from_user"]["id"]]["conn"]
-                        .setRemoteDescription(new RTCSessionDescription(answerDesc))
-                        .catch(info);
-                }
+                let answerDesc = JSON.parse(atob(message["content"]));
+                rtcPeerConns[message["from_user"]["id"]]["conn"]
+                    .setRemoteDescription(new RTCSessionDescription(answerDesc))
+                    .catch(info);
+                break;
+            case SignalingEvent.RTCICECandidate:
+                let candidate = JSON.parse(atob(message["content"]));
+                rtcPeerConns[message["from_user"]["id"]]["conn"]
+                    .addIceCandidate(candidate)
+                    .catch(info);
         }
     };
 

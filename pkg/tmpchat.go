@@ -198,7 +198,7 @@ func (c *Channel) Run() {
 			} else {
 				continue
 			}
-		case RTCOffer, RTCAnswer:
+		case RTCOffer, RTCAnswer, RTCICECandidate:
 			if member, ok := c.Members.Get(msg.ToUserID); ok {
 				msg.SendTo(member)
 			}
@@ -263,6 +263,7 @@ const (
 	Welcome
 	RTCOffer
 	RTCAnswer
+	RTCICECandidate
 )
 
 func signalingHandler(w http.ResponseWriter, r *http.Request) {
