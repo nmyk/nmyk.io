@@ -100,6 +100,17 @@
             }
         };
 
+        const addNewDataChannel = member => {
+            let dataChannel = rtcPeerConns[member["id"]]["conn"].createDataChannel(unescape(window.location.pathname.substr(1)));
+            dataChannel.onclose = () => {
+                console.log(`dataChannel for ${member["id"]} has closed`);
+                delete rtcPeerConns[member["id"]];
+            };
+            dataChannel.onopen = () => console.log(`dataChannel for ${member["id"]} has opened`);
+            dataChannel.onmessage = event => write(JSON.parse(event.data));
+            rtcPeerConns[member["id"]]["dataChannel"] = dataChannel;
+        };
+
         const announce = message => {
             let announcement = document.createElement("div");
             announcement.className = "systemmessage";
@@ -136,43 +147,12 @@
 
         const myUserId = "{{.User.ID}}";
         let myName = "{{.User.Name}}";
+        const rtcPeerConns = {};
 
         window.addEventListener("load", () => {
             const input = document.getElementById("messagetext");
 
             let ws = new WebSocket("ws://{{.SignalingHost|safeURL}}");
-
-            let pc = new RTCPeerConnection({
-                iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
-            });
-
-            let dataChannel = pc.createDataChannel(unescape(window.location.pathname.substr(1)));
-
-            dataChannel.onclose = () => console.log('sendChannel has closed');
-
-            dataChannel.onopen = () => console.log('sendChannel has opened');
-
-            dataChannel.onmessage = event => write(JSON.parse(event.data));
-
-            pc.oniceconnectionstatechange = () => info(pc.iceConnectionState);
-
-            pc.onicecandidate = event => {
-                if (event.candidate === null) {
-                    let desc = btoa(JSON.stringify(pc.localDescription));
-                    let msg = newMessage(SignalingEvent.RTCOffer, desc);
-                    ws.send(JSON.stringify(msg));
-                }
-            };
-
-            pc.onnegotiationneeded = () =>
-                pc.createOffer().then(d => pc.setLocalDescription(d)).catch(info);
-
-            pc.ondatachannel = function(event) {
-                let recvChannel = event.channel;
-                recvChannel.onmessage = function(event) {
-                    write(JSON.parse(event.data))
-                };
-            };
 
             ws.onopen = () => {
                 let nametag = document.createElement("span");
@@ -191,11 +171,35 @@
                 ws.close();
             };
 
+            const addNewRTCPeerConn = (member, isLocal) => {
+                let pc =  new RTCPeerConnection({
+                    iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+                });
+                pc.oniceconnectionstatechange = () => info(pc.iceConnectionState);
+                if (isLocal) {
+                    pc.onicecandidate = event => {
+                        if (event.candidate === null) {
+                            let desc = btoa(JSON.stringify(pc.localDescription));
+                            let msg = newMessage(SignalingEvent.RTCOffer, desc);
+                            ws.send(JSON.stringify(msg));
+                        }
+                    };
+                }
+                pc.onnegotiationneeded = () => pc.createOffer().then(d => pc.setLocalDescription(d)).catch(info);
+                rtcPeerConns[member["id"]] = {
+                    "conn": pc,
+                };
+            };
+
             ws.onmessage = event => {
                 let message = JSON.parse(event.data);
                 console.log(message);
                 switch (message.type) {
                     case SignalingEvent.Entrance:
+                        console.log("entrance");
+                        if (message["from_user"]["id"] !== myUserId) {
+                        addNewRTCPeerConn(message["from_user"], false);
+                    }
                         doEntrance(message["from_user"]);
                         announce(message);
                         break;
@@ -210,29 +214,43 @@
                         doClear();
                         break;
                     case SignalingEvent.Welcome:
-                        for (let i=0; i<message["content"].length; i++) {
-                           doEntrance(message["content"][i])
+                        for (let i=0; i < message["content"].length; i++) {
+                           let member = message["content"][i];
+                           doEntrance(member);
+                           if (member["id"] !== myUserId) {
+                               addNewRTCPeerConn(member, true);
+                               addNewDataChannel(member);
+                           }
                         }
                         break;
                     case SignalingEvent.RTCOffer:
-                        if (message["from_user"]["id"] === myUserId) {
-                            break;
+                        console.log("rtc offer");
+                        if (message["from_user"]["id"] !== myUserId) {
+                            rtcPeerConns[message["from_user"]["id"]]["conn"].ondatachannel = function(event) {
+                                event.channel.onmessage = e => write(JSON.parse(e.data));
+                                rtcPeerConns[message["from_user"]["id"]]["dataChannel"] = event.channel;
+                            };
+                            let offerDesc = JSON.parse(atob(message["content"]));
+                            let peerConn = rtcPeerConns[message["from_user"]["id"]]["conn"];
+                            peerConn.setRemoteDescription(new RTCSessionDescription(offerDesc))
+                                .then(() => peerConn.createAnswer())
+                                .then(answer => peerConn.setLocalDescription(answer))
+                                .then(() => {
+                                    let desc = btoa(JSON.stringify(peerConn.localDescription));
+                                    let response = newMessage(SignalingEvent.RTCAnswer, desc);
+                                    response["to_user_id"] = message["from_user"]["id"];
+                                    ws.send(JSON.stringify(response));
+                                })
+                                .catch(info);
                         }
-                        let offerDesc = JSON.parse(atob(message["content"]));
-                        pc.setRemoteDescription(new RTCSessionDescription(offerDesc))
-                          .then(() => pc.createAnswer())
-                          .then(answer => pc.setLocalDescription(answer))
-                          .then(() => {
-                                let desc = btoa(JSON.stringify(pc.localDescription));
-                                let response = newMessage(SignalingEvent.RTCAnswer, desc);
-                                response["to_user_id"] = message["from_user"]["id"];
-                                ws.send(JSON.stringify(response));
-                          })
-                         .catch(info);
                         break;
                     case SignalingEvent.RTCAnswer:
-                        let answerDesc = JSON.parse(atob(message["content"]));
-                        pc.setRemoteDescription(new RTCSessionDescription(answerDesc)).catch(e => info('!!' + e));
+                        if (message["from_user"]["id"] !== myUserId) {
+                            let answerDesc = JSON.parse(atob(message["content"]));
+                            rtcPeerConns[message["from_user"]["id"]]["conn"]
+                                .setRemoteDescription(new RTCSessionDescription(answerDesc))
+                                .catch(info);
+                        }
                 }
             };
 
@@ -267,7 +285,9 @@
                 }
                 let msg = newMessage(0, input.value);
                 write(msg);
-                dataChannel.send(JSON.stringify(msg));
+                for (let id in rtcPeerConns) {
+                    rtcPeerConns[id]["dataChannel"].send(JSON.stringify(msg));
+                }
                 input.value = "";
                 return false;
             };
