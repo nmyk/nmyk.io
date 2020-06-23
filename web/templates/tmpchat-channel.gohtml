@@ -9,6 +9,11 @@
     <meta name="description" content="tmpchat is a WebRTC-based group text messaging application designed and built by Nick Mykins (nmyk.io)"/>
     <title>tmpch.at - {{.ChannelName}}</title>
     <script type="text/javascript" src="https://cdn.nmyk.io/assets/he.js"></script>
+    <script>
+        const signalingHost = "{{.SignalingHost|safeURL}}";
+        const myUserId = "{{.User.ID}}";
+        let myName = "{{.User.Name}}";
+    </script>
     <script type="text/javascript" src="https://cdn.nmyk.io/assets/tmpchat.js"></script>
 </head>
 

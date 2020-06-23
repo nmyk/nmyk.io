@@ -133,14 +133,12 @@ const info = txt => {
     document.getElementById("info").innerText = txt;
 };
 
-const myUserId = "{{.User.ID}}";
-let myName = "{{.User.Name}}";
 const rtcPeerConns = {};
 
 window.addEventListener("load", () => {
     const input = document.getElementById("messagetext");
 
-    let ws = new WebSocket("ws://{{.SignalingHost|safeURL}}");
+    let ws = new WebSocket(`ws://${signalingHost}`);
 
     ws.onopen = () => {
         let nametag = document.createElement("span");
