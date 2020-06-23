@@ -43,7 +43,7 @@ func main() {
 	signalingMux.HandleFunc("/", signalingHandler)
 	go func() {
 		log.Fatal(http.ListenAndServeTLS(":7070",
-			"/etc/letsencrypt/live/nmyk.io/fullchain.pem",
+			"/etc/letsencrypt/live/nmyk.io/cert.pem",
 			"/etc/letsencrypt/live/nmyk.io/privkey.pem",
 			signalingMux))
 	}()
