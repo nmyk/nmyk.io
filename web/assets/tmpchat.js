@@ -137,7 +137,7 @@ const rtcPeerConns = {};
 window.addEventListener("load", () => {
     const input = document.getElementById("messagetext");
 
-    let ws = new WebSocket(`ws://${signalingHost}`);
+    let ws = new WebSocket(`wss://${signalingHost}`);
 
     ws.onopen = () => {
         let nametag = document.createElement("span");

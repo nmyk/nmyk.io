@@ -42,7 +42,10 @@ func main() {
 	signalingMux := http.NewServeMux()
 	signalingMux.HandleFunc("/", signalingHandler)
 	go func() {
-		log.Fatal(http.ListenAndServe(":7070", signalingMux))
+		log.Fatal(http.ListenAndServeTLS(":7070",
+			"/etc/letsencrypt/live/nmyk.io/fullchain.pem",
+			"/etc/letsencrypt/live/nmyk.io/privkey.pem",
+			signalingMux))
 	}()
 
 	tmpchatMux := http.NewServeMux()

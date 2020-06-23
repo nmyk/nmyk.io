@@ -29,4 +29,6 @@ services:
       dockerfile: ./deployment/app.Dockerfile
     env_file:
       - ../deployment/${APP_ENVIRONMENT}.env
+    volumes:
+    - ../data/certbot/conf:/etc/letsencrypt
     restart: always
