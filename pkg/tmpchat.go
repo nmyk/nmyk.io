@@ -198,9 +198,8 @@ func (c *Channel) Run() {
 			} else {
 				continue
 			}
-		case RTCAnswer:
+		case RTCOffer, RTCAnswer:
 			if member, ok := c.Members.Get(msg.ToUserID); ok {
-				log.Println(msg.ToUserID)
 				msg.SendTo(member)
 			}
 			continue
@@ -262,8 +261,8 @@ const (
 	NameChange
 	Clear
 	Welcome
-	// RTCOffer
-	RTCAnswer = 7
+	RTCOffer
+	RTCAnswer
 )
 
 func signalingHandler(w http.ResponseWriter, r *http.Request) {

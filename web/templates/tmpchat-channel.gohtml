@@ -181,6 +181,7 @@
                         if (event.candidate === null) {
                             let desc = btoa(JSON.stringify(pc.localDescription));
                             let msg = newMessage(SignalingEvent.RTCOffer, desc);
+                            msg["to_user_id"] = member["id"];
                             ws.send(JSON.stringify(msg));
                         }
                     };
@@ -198,7 +199,7 @@
                     case SignalingEvent.Entrance:
                         console.log("entrance");
                         if (message["from_user"]["id"] !== myUserId) {
-                        addNewRTCPeerConn(message["from_user"], false);
+                        addNewRTCPeerConn(message["from_user"], false); // "remote" means "already here"
                     }
                         doEntrance(message["from_user"]);
                         announce(message);
@@ -218,7 +219,7 @@
                            let member = message["content"][i];
                            doEntrance(member);
                            if (member["id"] !== myUserId) {
-                               addNewRTCPeerConn(member, true);
+                               addNewRTCPeerConn(member, true); // "local" means "newly arrived"
                                addNewDataChannel(member);
                            }
                         }
@@ -286,7 +287,10 @@
                 let msg = newMessage(0, input.value);
                 write(msg);
                 for (let id in rtcPeerConns) {
-                    rtcPeerConns[id]["dataChannel"].send(JSON.stringify(msg));
+                    let dc = rtcPeerConns[id]["dataChannel"];
+                    if (dc && dc.readyState === "open") {
+                        dc.send(JSON.stringify(msg));
+                    }
                 }
                 input.value = "";
                 return false;
