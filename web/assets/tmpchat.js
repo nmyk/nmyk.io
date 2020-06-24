@@ -162,7 +162,7 @@ const addNewRTCPeerConn = (member, isLocal) => {
     });
     pc.oniceconnectionstatechange = () => info(pc.iceConnectionState);
     pc.onicecandidate = event => {
-        if (event.candidate) {
+        if (event.candidate !== null) {
             let desc = btoa(JSON.stringify(event.candidate));
             let msg = newMessage(SignalingEvent.RTCICECandidate, desc);
             msg["to_user_id"] = member["id"];
