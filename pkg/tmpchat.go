@@ -303,10 +303,10 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 
 type tmpchatPageData struct {
 	bgData
-	ChannelName   string
-	User          User
-	AppHost       string
-	SignalingHost string
+	ChannelName  string
+	User         User
+	AppHost      string
+	SignalingURL string
 }
 
 func tmpchatHandler(w http.ResponseWriter, r *http.Request) {
@@ -327,7 +327,7 @@ func tmpchatHandler(w http.ResponseWriter, r *http.Request) {
 		channelName,
 		newUser,
 		os.Getenv("TMPCHAT_HOST"),
-		os.Getenv("TMPCHAT_SIGNALING_HOST"),
+		os.Getenv("TMPCHAT_SIGNALING_URL"),
 	}
 	_ = tmpl.Execute(w, d)
 }
