@@ -122,8 +122,10 @@ func (c *Channel) GetMembers() []User {
 	i := 0
 	c.Members.Range(
 		func(id string, member *Member) bool {
-			users[i] = User{id, member.Name}
-			i++
+			if member.Conn != nil {
+				users[i] = User{id, member.Name}
+				i++
+			}
 			return true
 		})
 	return users
