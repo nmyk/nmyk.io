@@ -158,7 +158,7 @@ window.onunload = window.onbeforeunload = () => {
 
 const addNewRTCPeerConn = (member, isLocal) => {
     let pc =  new RTCPeerConnection({
-        iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+        iceServers: [{ urls: "stun:stun.tmpch.at:3478" }]
     });
     pc.oniceconnectionstatechange = () => info(pc.iceConnectionState);
     pc.onicecandidate = event => {
