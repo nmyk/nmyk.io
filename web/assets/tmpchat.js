@@ -89,7 +89,8 @@ const doNameChange = message => {
 };
 
 const addNewDataChannel = member => {
-    let dataChannel = rtcPeerConns[member["id"]]["conn"].createDataChannel(unescape(window.location.pathname.substr(1)));
+    let dataChannel = rtcPeerConns[member["id"]]["conn"]
+        .createDataChannel(unescape(window.location.pathname.substr(1)));
     dataChannel.onclose = () => {
         console.log(`dataChannel for ${member["id"]} has closed`);
         delete rtcPeerConns[member["id"]];
@@ -162,22 +163,25 @@ window.addEventListener("load", () => {
             iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
         });
         pc.oniceconnectionstatechange = () => info(pc.iceConnectionState);
-        if (isLocal) {
-            pc.onicecandidate = event => {
-                if (event.candidate === null) {
+        pc.onicecandidate = event => {
+            if (event.candidate) {
+                let desc = btoa(JSON.stringify(event.candidate));
+                let msg = newMessage(SignalingEvent.RTCICECandidate, desc);
+                msg["to_user_id"] = member["id"];
+                ws.send(JSON.stringify(msg));
+            }
+        };
+        pc.onnegotiationneeded = () => pc.createOffer()
+            .then(d => pc.setLocalDescription(d))
+            .then(() => {
+                if (isLocal) {
                     let desc = btoa(JSON.stringify(pc.localDescription));
                     let msg = newMessage(SignalingEvent.RTCOffer, desc);
                     msg["to_user_id"] = member["id"];
                     ws.send(JSON.stringify(msg));
-                } else {
-                    let desc = btoa(JSON.stringify(event.candidate));
-                    let msg = newMessage(SignalingEvent.RTCICECandidate, desc);
-                    msg["to_user_id"] = member["id"];
-                    ws.send(JSON.stringify(msg));
                 }
-            };
-        }
-        pc.onnegotiationneeded = () => pc.createOffer().then(d => pc.setLocalDescription(d)).catch(info);
+            })
+            .catch(info);
         rtcPeerConns[member["id"]] = {
             "conn": pc,
         };
@@ -243,6 +247,7 @@ window.addEventListener("load", () => {
                 break;
             case SignalingEvent.RTCICECandidate:
                 let candidate = JSON.parse(atob(message["content"]));
+                console.log(candidate);
                 rtcPeerConns[message["from_user"]["id"]]["conn"]
                     .addIceCandidate(candidate)
                     .catch(info);
