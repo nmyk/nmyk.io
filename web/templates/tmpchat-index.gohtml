@@ -10,7 +10,7 @@
     <meta name="description" content="tmpchat is a WebRTC-based group text messaging application designed and built by Nick Mykins (nmyk.io)"/>
     <title>tmpchat</title>
     <script>
-        const getChannelURL = channelName => "http://{{.AppHost|safeURL}}/" + channelName;
+        const getChannelURL = channelName => "{{.AppURL|safeURL}}/" + channelName;
         const uuidv4 = () => {
             return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
                 (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)

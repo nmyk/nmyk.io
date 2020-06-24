@@ -275,7 +275,7 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				return false
 			}
-			return originURL.Host == os.Getenv("TMPCHAT_HOST")
+			return originURL.String() == os.Getenv("TMPCHAT_URL")
 		},
 	}
 	c, err := upgrader.Upgrade(w, r, nil)
@@ -305,7 +305,7 @@ type tmpchatPageData struct {
 	bgData
 	ChannelName  string
 	User         User
-	AppHost      string
+	AppURL       string
 	SignalingURL string
 }
 
@@ -326,7 +326,7 @@ func tmpchatHandler(w http.ResponseWriter, r *http.Request) {
 	d := tmpchatPageData{getBgData(),
 		channelName,
 		newUser,
-		os.Getenv("TMPCHAT_HOST"),
+		os.Getenv("TMPCHAT_URL"),
 		os.Getenv("TMPCHAT_SIGNALING_URL"),
 	}
 	_ = tmpl.Execute(w, d)
