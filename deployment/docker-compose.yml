@@ -8,6 +8,8 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "3478:3478"
+      - "49152-65535:49152-65535/udp"
     volumes:
       - ../config/nginx:/etc/nginx/conf.d
       - ../data/certbot/conf:/etc/letsencrypt
@@ -24,9 +26,17 @@ services:
     restart: unless-stopped
 
   app:
+    depends_on:
+      - coturn
     build:
       context: ../
       dockerfile: ./deployment/app.Dockerfile
     env_file:
       - ../deployment/${APP_ENVIRONMENT}.env
     restart: always
+
+  coturn:
+    image: instrumentisto/coturn
+    build:
+      network: host
+    restart: unless-stopped
