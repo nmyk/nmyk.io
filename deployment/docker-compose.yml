@@ -1,4 +1,4 @@
-version: '3.4'
+version: '3.7'
 services:
 
   nginx:
@@ -25,6 +25,11 @@ services:
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     restart: unless-stopped
 
+  coturn:
+    image: instrumentisto/coturn
+    network_mode: "host"
+    restart: unless-stopped
+
   app:
     depends_on:
       - coturn
@@ -35,8 +40,3 @@ services:
       - ../deployment/${APP_ENVIRONMENT}.env
     restart: always
 
-  coturn:
-    image: instrumentisto/coturn
-    build:
-      network: host
-    restart: unless-stopped
