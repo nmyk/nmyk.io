@@ -8,8 +8,6 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "3478:3478"
-      - "49152-65535:49152-65535/udp"
     volumes:
       - ../config/nginx:/etc/nginx/conf.d
       - ../data/certbot/conf:/etc/letsencrypt
