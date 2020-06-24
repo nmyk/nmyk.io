@@ -78,7 +78,7 @@ input, textarea, button, .messagelog {
 
 .container {
     display: table;
-    min-width: 360px;
+    min-width: 320px;
     max-width: 600px;
     padding: 30px;
 }
