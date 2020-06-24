@@ -149,7 +149,7 @@ window.addEventListener("load", () => {
         ws.send(JSON.stringify(newMessage(SignalingEvent.Entrance, content)));
     };
 
-    window.onbeforeunload = () => {
+    window.onload = window.onbeforeunload = () => {
         let nametag = document.createElement("span");
         nametag.className = myUserId;
         nametag.textContent = myName;
