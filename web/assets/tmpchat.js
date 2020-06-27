@@ -94,7 +94,8 @@ const appendToRoll = user => {
     document.getElementById("namechange").appendChild(tag);
 };
 
-const doExit = user => {
+const doExit = message => {
+    let user = message["from_user"];
     if (user["id"] !== myUserId) {
         let element = document.getElementById("namechange").getElementsByClassName(user["id"])[0];
         element.parentElement.outerHTML = "";
@@ -152,7 +153,7 @@ const handleTmpchatEvent = event => {
             doNameChange(message);
             break;
         case TmpchatEvent.Exit:
-            doExit(message["from_user"]);
+            doExit(message);
             break;
     }
 };
@@ -307,9 +308,12 @@ window.onload = () => {
         return false;
     };
 
-    document.getElementById("namechange").onsubmit = () => {
+    document.getElementById("myname").onblur =
+        document.getElementById("namechange").onsubmit = () => {
         let newName = he.escape(document.getElementById("myname").value);
         if (!newNameIsOk(newName)) {
+            input.focus();
+            document.getElementById("myname").value = myName;
             return false;
         }
         let message = newMessage(TmpchatEvent.NameChange, newName);
@@ -321,11 +325,6 @@ window.onload = () => {
 
     document.getElementById("myname").onfocus = () => {
         document.getElementById("myname").value = "";
-        return false;
-    };
-
-    document.getElementById("myname").onblur = () => {
-        document.getElementById("myname").value = myName;
         return false;
     };
 

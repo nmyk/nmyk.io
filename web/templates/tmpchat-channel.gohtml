@@ -2,7 +2,201 @@
 <!-- Questions? Comments? Concerns? Let us know what you think: 1-800-TMP-CHAT@nmyk.io -->
 <head>
     <link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet">
-    <link href="https://cdn.nmyk.io/assets/style.css" rel="stylesheet">
+    <style>
+        :root {
+            --main-text-color: #ecdfc6;
+            --alt-text-color: #dbb870;
+            --maroon: #6b002e;
+            --brown: #613805;
+            --green: #0b4c1a;
+            --blue: #064256;
+            --purple: #5b0863;
+            --black: #282828;
+        }
+
+        * {
+            color: var(--main-text-color);
+            box-sizing: border-box;
+            line-height: 23px;
+            font-size: 16px;
+            font-family: 'Inconsolata', monospace;
+        }
+
+        body {
+            text-align: center;
+            background: linear-gradient(
+                    to right,
+                    var(--maroon),
+                    var(--purple),
+                    var(--blue),
+                    var(--green),
+                    var(--brown),
+                    var(--maroon)
+            );
+            background-size: 8000px 100%;
+            -webkit-animation-name: bg-animation;
+            -moz-animation-name: bg-animation;
+            animation-name: bg-animation;
+            -webkit-animation-iteration-count: infinite;
+            -moz-animation-iteration-count: infinite;
+            animation-iteration-count: infinite;
+            -webkit-animation-timing-function: linear;
+            -moz-animation-timing-function: linear;
+            animation-timing-function: linear;
+        }
+
+        @-webkit-keyframes bg-animation {
+            0%{background-position:0 0; filter: hue-rotate(-120deg);}
+            50%{background-position:8000px 0; filter: hue-rotate(240deg);}
+            100%{background-position:0 0; filter: hue-rotate(-120deg);}
+        }
+        @-moz-keyframes bg-animation {
+            0%{background-position:0 0; filter: hue-rotate(-120deg);}
+            50%{background-position:8000px 0; filter: hue-rotate(240deg);}
+            100%{background-position:0 0; filter: hue-rotate(-120deg);}
+        }
+        @keyframes bg-animation {
+            0%{background-position:0 0; filter: hue-rotate(-120deg);}
+            50%{background-position:8000px 0; filter: hue-rotate(240deg);}
+            100%{background-position:0 0; filter: hue-rotate(-120deg);}
+        }
+
+        ::selection {
+            background: var(--black);
+        }
+
+        div.vspace50px {
+            clear: both;
+            height: 50px;
+        }
+
+        input, textarea, button, .messagelog {
+            background: none;
+            border: 1px solid var(--main-text-color);
+            border-radius: 4px;
+        }
+
+        .container, .messagelog {
+            text-align: left;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .container {
+            display: table;
+            min-width: 320px;
+            max-width: 600px;
+            padding: 20px;
+        }
+
+        .messagelog {
+            box-sizing: border-box;
+            width: 100%;
+            height: 400px;
+            padding: 10px;
+            overflow: auto;
+        }
+
+        .myname {
+            float: right;
+            font-weight: bold;
+            text-align: right;
+            padding-left: 10px;
+        }
+
+        .theirname {
+            float: left;
+            font-weight: bold;
+            text-align: left;
+            padding-right: 10px;
+        }
+
+        .mymessage pre {
+            text-align: right;
+            overflow: hidden;
+            color: var(--alt-text-color);
+            margin-bottom: 10px;
+        }
+
+        .theirmessage pre {
+            text-align: left;
+            overflow: hidden;
+            color: var(--alt-text-color);
+            margin-bottom: 10px;
+        }
+
+        .systemmessage {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        input[type="nametext"] {
+            padding-left: 5px;
+        }
+
+        textarea#messagetext {
+            padding-left: 10px;
+            width: 100%;
+            resize: vertical;
+        }
+
+        .messagetextcontainer {
+            width: calc(100% - 56px);
+            float: left;
+        }
+
+        input[type="submit"] {
+            width: 50px;
+        }
+
+        hr {
+            visibility: hidden;
+        }
+
+        a {
+            color: var(--alt-text-color);
+            text-decoration: none;
+        }
+
+        a:hover {
+            color: var(--alt-text-color);
+            text-decoration: underline;
+        }
+
+        a[type="home"], a[type="home"]:hover {
+            color: var(--main-text-color);
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            white-space: -moz-pre-wrap;
+            white-space: -o-pre-wrap;
+            word-wrap: break-word;
+        }
+
+        ul {
+            margin: 0px;
+            padding-left: 20px;
+        }
+
+        li {
+            list-style: none;
+        }
+
+        .keys {
+            display: inline-block;
+            text-align: right;
+        }
+
+        .values {
+            display: inline-block;
+            margin-left: 5px;
+        }
+
+    </style>
     <link href="https://cdn.nmyk.io/assets/favicon.ico" rel="icon">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,7 +210,371 @@
         let myName = "{{.User.Name}}";
     </script>
     <script type="text/javascript" src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
-    <script type="text/javascript" src="https://cdn.nmyk.io/assets/tmpchat.js"></script>
+    <script type="text/javascript">
+        const SEPARATOR = " • ";
+
+        const SignalingEvent = {
+            "Entrance": 0,
+            "RTCOffer": 1,
+            "RTCAnswer": 2,
+            "RTCICECandidate": 3,
+            "TURNCredRequest": 4,
+            "TURNCredResponse": 5
+        };
+
+        const TmpchatEvent = {
+            "Message": 0,
+            "Clear": 1,
+            "NameChange": 2,
+            "Exit": 3
+        };
+
+        const newMessage = (type, content) => {
+            return {
+                "channel_name": unescape(window.location.pathname.substr(1)),
+                "from_user": {"id": myUserId, "name": myName},
+                "type": type,
+                "content": content
+            };
+        };
+
+        const broadcast = message => {
+            for (let id in rtcPeerConns) {
+                let dc = rtcPeerConns[id]["dataChannel"];
+                if (dc && dc.readyState === "open") {
+                    dc.send(JSON.stringify(message));
+                }
+            }
+        };
+
+        const nameTag = (message, isFromMe) => {
+            let tag = document.createElement("div");
+            let name = document.createElement("span");
+            name.className = message["from_user"]["id"];
+            name.innerHTML = message["from_user"]["name"];
+            tag.appendChild(name);
+            if (isFromMe) {
+                tag.className = "myname";
+                tag.innerHTML = SEPARATOR + tag.innerHTML;
+            } else {
+                tag.className = "theirname";
+                tag.innerHTML = tag.innerHTML + SEPARATOR;
+            }
+            return tag;
+        };
+
+        const shouldStackMsg = (message, lastMsgElement) => {
+            if (message["type"] !== 0 || !lastMsgElement) {
+                return false;
+            }
+            if (lastMsgElement.className === "systemmessage") { // only stack user messages
+                return false;
+            }
+            let lastMsgUserId = lastMsgElement.firstElementChild.firstElementChild.className;
+            return message["from_user"]["id"] === lastMsgUserId;
+        };
+
+        const announceEntrance = user => {
+            let nametag = document.createElement("span");
+            nametag.className = user["id"];
+            nametag.textContent = user["name"];
+            announce(nametag.outerHTML + " joined");
+        };
+
+        const announceExit = user => {
+            let nametag = document.createElement("span");
+            nametag.className = user["id"];
+            nametag.textContent = user["name"];
+            announce(nametag.outerHTML + " left");
+        };
+
+        const announce = announcementHTML => {
+            let announcement = document.createElement("div");
+            announcement.className = "systemmessage";
+            announcement.innerHTML = announcementHTML;
+            document.getElementById("messagelog").appendChild(announcement);
+        };
+
+        const appendToRoll = user => {
+            userNames[user["id"]] = user["name"];
+            let tag = document.createElement("div");
+            let name = document.createElement("span");
+            name.className = user["id"];
+            name.innerHTML = user["name"];
+            tag.appendChild(name);
+            tag.style.display = "inline";
+            tag.innerHTML = SEPARATOR + tag.innerHTML;
+            document.getElementById("namechange").appendChild(tag);
+        };
+
+        const doExit = message => {
+            let user = message["from_user"];
+            if (user["id"] !== myUserId) {
+                let element = document.getElementById("namechange").getElementsByClassName(user["id"])[0];
+                element.parentElement.outerHTML = "";
+                announceExit(user);
+            }
+        };
+
+        const doClear = () => {
+            let node = document.getElementById("messagelog");
+            while (node.firstChild) {
+                node.removeChild(node.firstChild);
+            }
+            document.getElementById("messagetext").focus();
+        };
+
+        const doNameChange = message => {
+            let userId = message["from_user"]["id"];
+            let newName = message["content"];
+            userNames[userId] = newName;
+            let toChange = document.getElementsByClassName(userId);
+            for (let i = 0; i < toChange.length; i++) {
+                toChange[i].innerHTML = newName;
+            }
+            if (userId === myUserId) {
+                myName = he.unescape(newName);
+                document.getElementById("myname").value = myName;
+            }
+        };
+
+        const newNameIsOk = newName =>
+            !(newName === "" || newName === myName || userNames.hasOwnProperty(newName));
+
+        const addNewDataChannel = member => {
+            let dataChannel = rtcPeerConns[member["id"]]["conn"]
+                .createDataChannel(unescape(window.location.pathname.substr(1)));
+            dataChannel.onclose = () => {
+                console.log(`dataChannel for ${member["id"]} has closed`);
+                delete rtcPeerConns[member["id"]];
+            };
+            dataChannel.onopen = () => rtcPeerConns[member["id"]]["dataChannel"] = dataChannel;
+            dataChannel.onmessage = event => handleTmpchatEvent(event);
+            rtcPeerConns[member["id"]]["dataChannel"] = dataChannel;
+        };
+
+        const handleTmpchatEvent = event => {
+            let message = JSON.parse(event.data);
+            switch (message.type) {
+                case TmpchatEvent.Message:
+                    write(message);
+                    break;
+                case TmpchatEvent.Clear:
+                    doClear();
+                    break;
+                case TmpchatEvent.NameChange:
+                    doNameChange(message);
+                    break;
+                case TmpchatEvent.Exit:
+                    doExit(message);
+                    break;
+            }
+        };
+
+        const write = message => {
+            let messageLog = document.getElementById("messagelog");
+            const lastMsgElement = messageLog.lastElementChild;
+            if (shouldStackMsg(message, lastMsgElement)) {
+                let currentText = lastMsgElement.getElementsByClassName("chatmessage")[0];
+                currentText.textContent += "\n" + message["content"];
+            } else {
+                let isFromMe = message["from_user"]["id"] === myUserId;
+                let name = nameTag(message, isFromMe);
+                let msg = document.createElement("div");
+                msg.className = isFromMe ? "mymessage" : "theirmessage";
+                let pre = document.createElement("pre");
+                pre.className = "chatmessage";
+                pre.textContent = message["content"];
+                msg.appendChild(pre);
+                msg.insertAdjacentHTML("afterbegin", name.outerHTML);
+                messageLog.appendChild(msg);
+            }
+            if (document.activeElement === document.getElementById("messagetext")) {
+                messageLog.scrollTop = messageLog.scrollHeight;
+            }
+        };
+
+        const info = txt => {
+            document.getElementById("info").innerText = txt;
+        };
+
+        const rtcPeerConns = {};
+        const userNames = {};
+
+        let ws = new WebSocket(`${signalingURL}`);
+
+        ws.sendMessage = message => ws.send(JSON.stringify(message));
+
+        ws.onopen = () => {
+            ws.sendMessage(newMessage(SignalingEvent.TURNCredRequest, null));
+        };
+
+        window.onunload = window.onbeforeunload = () => {
+            broadcast(newMessage(TmpchatEvent.Exit), null);
+            ws.close();
+        };
+
+        const addNewRTCPeerConn = (turnCreds, member, isLocal) => {
+            // isLocal: true if we're already in the chat and adding an
+            // RTCPeerConnection for a new arrival. false if we're adding
+            // RTCPeerConnections for existing members because we're new.
+            let pc = new RTCPeerConnection({
+                iceServers: [{
+                    urls: "turn:turn.tmpch.at:3478",
+                    username: turnCreds["username"],
+                    credential: turnCreds["credential"]
+                }]
+            });
+            pc.oniceconnectionstatechange = () => info(pc.iceConnectionState);
+            pc.onicecandidate = event => {
+                if (event.candidate !== null) {
+                    let desc = btoa(JSON.stringify(event.candidate));
+                    let msg = newMessage(SignalingEvent.RTCICECandidate, desc);
+                    msg["to_user_id"] = member["id"];
+                    ws.sendMessage(msg);
+                }
+            };
+            pc.onnegotiationneeded = () => pc.createOffer()
+                .then(d => pc.setLocalDescription(d))
+                .then(() => {
+                    if (isLocal) {
+                        let desc = btoa(JSON.stringify(pc.localDescription));
+                        let msg = newMessage(SignalingEvent.RTCOffer, desc);
+                        msg["to_user_id"] = member["id"];
+                        ws.sendMessage(msg);
+                    }
+                })
+                .catch(info);
+            pc.ondatachannel = function (event) {
+                event.channel.onopen = () => rtcPeerConns[member["id"]]["dataChannel"] = event.channel;
+                event.channel.onmessage = event => handleTmpchatEvent(event);
+            };
+            rtcPeerConns[member["id"]] = {
+                "conn": pc,
+            };
+        };
+
+        const answerRTCOffer = message => {
+            let offerDesc = JSON.parse(atob(message["content"]));
+            rtcPeerConns.add(message["from_user"], false);
+            let peerConn = rtcPeerConns[message["from_user"]["id"]]["conn"];
+            peerConn.setRemoteDescription(new RTCSessionDescription(offerDesc))
+                .then(() => peerConn.createAnswer())
+                .then(answer => peerConn.setLocalDescription(answer))
+                .then(() => {
+                    let desc = btoa(JSON.stringify(peerConn.localDescription));
+                    let response = newMessage(SignalingEvent.RTCAnswer, desc);
+                    response["to_user_id"] = message["from_user"]["id"];
+                    ws.sendMessage(response);
+                })
+                .catch(info);
+        };
+
+        ws.onmessage = event => {
+            let message = JSON.parse(event.data);
+            switch (message.type) {
+                case SignalingEvent.Entrance:
+                    let member = message["content"];
+                    if (member["id"] !== myUserId) {
+                        rtcPeerConns.add(member, true);
+                        addNewDataChannel(member);
+                        appendToRoll(member);
+                    }
+                    announceEntrance(member);
+                    break;
+                case SignalingEvent.RTCOffer:
+                    appendToRoll(message["from_user"]);
+                    answerRTCOffer(message);
+                    break;
+                case SignalingEvent.RTCAnswer:
+                    let answerDesc = JSON.parse(atob(message["content"]));
+                    rtcPeerConns[message["from_user"]["id"]]["conn"]
+                        .setRemoteDescription(new RTCSessionDescription(answerDesc))
+                        .catch(info);
+                    break;
+                case SignalingEvent.RTCICECandidate:
+                    let candidate = JSON.parse(atob(message["content"]));
+                    rtcPeerConns[message["from_user"]["id"]]["conn"]
+                        .addIceCandidate(candidate)
+                        .catch(info);
+                    break;
+                case SignalingEvent.TURNCredResponse:
+                    rtcPeerConns.add = (member, isLocal) => addNewRTCPeerConn(message["content"], member, isLocal)
+            }
+        };
+
+        ws.onerror = () => {
+            ws.close();
+        };
+
+        window.onload = () => {
+            const input = document.getElementById("messagetext");
+
+            document.getElementById("send").onclick = () => {
+                if (input.value === "") {
+                    return false;
+                }
+                let msg = newMessage(TmpchatEvent.Message, input.value);
+                write(msg);
+                broadcast(msg);
+                input.value = "";
+                return false;
+            };
+
+            document.getElementById("myname").onblur =
+                document.getElementById("namechange").onsubmit = () => {
+                    let newName = he.escape(document.getElementById("myname").value);
+                    if (!newNameIsOk(newName)) {
+                        input.focus();
+                        document.getElementById("myname").value = myName;
+                        return false;
+                    }
+                    let message = newMessage(TmpchatEvent.NameChange, newName);
+                    doNameChange(message);
+                    broadcast(message);
+                    input.focus();
+                    return false;
+                };
+
+            document.getElementById("myname").onfocus = () => {
+                document.getElementById("myname").value = "";
+                return false;
+            };
+
+            document.getElementById("clear").onclick = () => {
+                if (!ws) {
+                    doClear();
+                    return false;
+                }
+                doClear();
+                broadcast(newMessage(TmpchatEvent.Clear, null));
+                return false;
+            };
+
+            input.onfocus = () => {
+                let m = document.getElementById("messagelog");
+                m.scrollTop = m.scrollHeight;
+            };
+
+            let doubleEnterTs; // Clear chat by double-pressing Enter with no text in the input field
+            input.onkeypress = event => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                    if (input.value === "" && (Date.now() - doubleEnterTs < 150)) {
+                        document.getElementById("clear").click();
+                        return false;
+                    }
+                    if (input.value === "") {
+                        doubleEnterTs = Date.now();
+                        return false;
+                    }
+                    document.getElementById("send").click();
+                    return false;
+                }
+            };
+
+            input.focus();
+        }
+    </script>
 </head>
 
 <body style="
@@ -25,9 +583,11 @@
         animation-duration: {{.BgAnimationDuration}}s;
         animation-delay: {{.BgAnimationDelay}}s;">
 <div class="vspace50px"></div>
-<a href="{{.AppURL|safeURL}}/" type="home">tmpchat</a>
+<div class="container" style="text-align: center;">
+<a href="{{.AppURL|safeURL}}/" type="home" style="margin:auto;">tmpchat</a>
 <br>
 #{{.ChannelName}}
+</div>
 
 <div class="container" style="width: 80%;">
     <div class="messagelog" id="messagelog"></div>

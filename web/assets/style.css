@@ -11,6 +11,7 @@
 
 * {
     color: var(--main-text-color);
+    box-sizing: border-box;
     line-height: 23px;
     font-size: 16px;
     font-family: 'Inconsolata', monospace;
@@ -80,7 +81,7 @@ input, textarea, button, .messagelog {
     display: table;
     min-width: 320px;
     max-width: 600px;
-    padding: 30px;
+    padding: 20px;
 }
 
 .messagelog {
