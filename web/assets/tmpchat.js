@@ -141,17 +141,14 @@ const addNewDataChannel = member => {
 
 const handleTmpchatEvent = event => {
     let message = JSON.parse(event.data);
-    console.log(message);
     switch (message.type) {
         case TmpchatEvent.Message:
-            console.log("we in here");
             write(message);
             break;
         case TmpchatEvent.Clear:
             doClear();
             break;
         case TmpchatEvent.NameChange:
-            console.log("we changin names")
             doNameChange(message);
             break;
         case TmpchatEvent.Exit:
@@ -261,7 +258,6 @@ const answerRTCOffer = message => {
 
 ws.onmessage = event => {
     let message = JSON.parse(event.data);
-    console.log(message);
     switch (message.type) {
         case SignalingEvent.Entrance:
             let member = message["content"];
@@ -284,7 +280,6 @@ ws.onmessage = event => {
             break;
         case SignalingEvent.RTCICECandidate:
             let candidate = JSON.parse(atob(message["content"]));
-            console.log(candidate);
             rtcPeerConns[message["from_user"]["id"]]["conn"]
                 .addIceCandidate(candidate)
                 .catch(info);
@@ -318,7 +313,6 @@ window.onload = () => {
             return false;
         }
         let message = newMessage(TmpchatEvent.NameChange, newName);
-        console.log(message);
         doNameChange(message);
         broadcast(message);
         input.focus();
