@@ -15,6 +15,7 @@
     line-height: 23px;
     font-size: 16px;
     font-family: 'Inconsolata', monospace;
+    -webkit-appearance: none;
 }
 
 body {
