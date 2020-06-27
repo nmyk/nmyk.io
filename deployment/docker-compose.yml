@@ -29,5 +29,6 @@ services:
       dockerfile: ./deployment/app.Dockerfile
     env_file:
       - ../deployment/${APP_ENVIRONMENT}.env
+      - ../secrets.env
     restart: always
 

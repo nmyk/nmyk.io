@@ -1,6 +1,9 @@
 package main
 
 import (
+	"crypto/hmac"
+	"crypto/sha1"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
@@ -11,6 +14,7 @@ import (
 	"os"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -100,7 +104,7 @@ type Member struct {
 	Name string
 }
 
-func (ch *Chat) CreateIfNecessary(channelName string) *Channel {
+func CreateIfNecessary(channelName string) *Channel {
 	var i uint64
 	c := &Channel{
 		Name:      channelName,
@@ -108,9 +112,9 @@ func (ch *Chat) CreateIfNecessary(channelName string) *Channel {
 		Messages:  make(chan Message),
 		AnonIndex: &i,
 	}
-	if existing, ok := ch.Get(channelName); !ok {
+	if existing, ok := tmpchat.Get(channelName); !ok {
 		go c.Run()
-		ch.Set(channelName, c)
+		tmpchat.Set(channelName, c)
 		return c
 	} else {
 		return existing
@@ -133,80 +137,47 @@ func (c *Channel) GetMembers() []User {
 
 func (c *Channel) AddMember() User {
 	user := User{uuid.New().String(), fmt.Sprintf("anon_%d", atomic.AddUint64(c.AnonIndex, 1))}
-	for !c.NameIsAvailable(user.Name) {
-		user.Name = fmt.Sprintf("anon_%d", atomic.AddUint64(c.AnonIndex, 1))
-	}
 	c.Members.Set(user.ID, &Member{nil, user.Name})
 	return user
 }
 
-func (c *Channel) NameIsAvailable(userName string) bool {
-	if userName == "" {
-		return false
-	}
-	isAvailable := true
-	c.Members.Range(func(id string, member *Member) bool {
-		if userName == member.Name {
-			isAvailable = false
-			return false
-		}
-		return true
-	})
-	return isAvailable
+type TURNCreds struct {
+	TURNUserName string `json:"username"`
+	Pass         string `json:"credential"`
+}
+
+func GetTURNCreds(userID string) TURNCreds {
+	expiresAt := time.Now().Add(24 * time.Hour).Unix()
+	turnUserName := fmt.Sprintf("%d:%s", expiresAt, userID)
+	k := []byte(os.Getenv("TURN_AUTH_SECRET"))
+	h := hmac.New(sha1.New, k)
+	h.Write([]byte(turnUserName))
+	password := base64.StdEncoding.EncodeToString(h.Sum(nil))
+	return TURNCreds{turnUserName, password}
 }
 
 func (c *Channel) Run() {
-	defer c.Close()
 	for msg := range c.Messages {
 		switch msg.Type {
-		case Entrance:
-			if member, ok := c.Members.Get(msg.FromUser.ID); ok && member.Conn == nil {
-				// Associate this websocket connection with the new user so we know
-				// which one to close when they send us an Exit.
-				member.Conn = msg.fromConn
-				// A Welcome message lets new members know who else is here.
-				msg.Reply(
-					Message{
-						Type:    Welcome,
-						Content: c.GetMembers(),
-					})
-			} else {
-				continue
-			}
-		case Exit:
-			if member, ok := c.Members.Get(msg.FromUser.ID); ok && msg.fromConn == member.Conn {
-				_ = member.Conn.Close()
-				c.Members.Delete(msg.FromUser.ID)
-				if c.Members.Count() == 0 {
-					return
-				}
-			} else {
-				continue
-			}
-		case NameChange:
-			if !c.NameIsAvailable(msg.Content.(string)) {
-				// a NameChange rejection is just another NameChange
-				// message telling you to change back to your old name.
-				msg.Reply(
-					Message{
-						FromUser: msg.FromUser,
-						Type:     NameChange,
-						Content:  msg.FromUser.Name,
-					})
-				continue
-			}
-			if member, ok := c.Members.Get(msg.FromUser.ID); ok && msg.fromConn == member.Conn {
-				member.Name = msg.Content.(string)
-			} else {
-				continue
-			}
 		case RTCOffer, RTCAnswer, RTCICECandidate:
 			if member, ok := c.Members.Get(msg.ToUserID); ok {
 				msg.SendTo(member)
 			}
-			continue
+		case TURNCredRequest:
+			if member, ok := c.Members.Get(msg.FromUser.ID); ok && member.Conn == nil {
+				member.Conn = msg.fromConn
+			}
+			msg.Reply(
+				Message{
+					Type:    TURNCredResponse,
+					Content: GetTURNCreds(msg.FromUser.ID),
+				})
+			c.Broadcast(
+				Message{
+					Type:    Entrance,
+					Content: msg.FromUser,
+				})
 		}
-		c.Broadcast(msg)
 	}
 }
 
@@ -257,15 +228,12 @@ type User struct {
 type EventType int
 
 const (
-	// Event type 0 denotes a user chat message, which we never see here.
-	Entrance EventType = iota + 1
-	Exit
-	NameChange
-	Clear
-	Welcome
+	Entrance EventType = iota
 	RTCOffer
 	RTCAnswer
 	RTCICECandidate
+	TURNCredRequest
+	TURNCredResponse
 )
 
 func signalingHandler(w http.ResponseWriter, r *http.Request) {
@@ -283,6 +251,7 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 		log.Print("upgrade:", err)
 		return
 	}
+	var userID, channelName string
 	for {
 		_, rawSignal, err := c.ReadMessage()
 		if err != nil {
@@ -294,9 +263,19 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 		if err := json.Unmarshal(rawSignal, &message); err != nil {
 			continue
 		}
+		if channelName == "" {
+			channelName = message.ChannelName
+			userID = message.FromUser.ID
+		}
 		message.fromConn = c
 		if ch, ok := tmpchat.Get(message.ChannelName); ok {
 			ch.Messages <- message
+		}
+	}
+	if ch, ok := tmpchat.Get(channelName); ok {
+		ch.Members.Delete(userID)
+		if ch.Members.Count() == 0 {
+			ch.Close()
 		}
 	}
 }
@@ -320,7 +299,7 @@ func tmpchatHandler(w http.ResponseWriter, r *http.Request) {
 		tmpl = getTemplate("tmpchat-index", fm)
 	} else {
 		tmpl = getTemplate("tmpchat-channel", fm)
-		channel := tmpchat.CreateIfNecessary(channelName)
+		channel := CreateIfNecessary(channelName)
 		newUser = channel.AddMember()
 	}
 	d := tmpchatPageData{getBgData(),

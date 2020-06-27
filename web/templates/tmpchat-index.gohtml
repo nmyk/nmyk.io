@@ -7,26 +7,26 @@
     <link href="https://cdn.nmyk.io/assets/favicon.ico" rel="icon">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="tmpchat is a WebRTC-based group text messaging application designed and built by Nick Mykins (nmyk.io)"/>
+    <meta name="description"
+          content="tmpchat is a WebRTC-based group text messaging application designed and built by Nick Mykins (nmyk.io)"/>
     <title>tmpchat</title>
     <script>
         const getChannelURL = channelName => "{{.AppURL|safeURL}}/" + channelName;
         const uuidv4 = () => {
-            return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+            return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
                 (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
             );
         };
         const hexToBase64URL = hex => {
-            return btoa(hex.match(/\w{2}/g).map(function(a) {
+            return btoa(hex.match(/\w{2}/g).map(function (a) {
                 return String.fromCharCode(parseInt(a, 16));
-            }).join("")).replace(/[=+\/]/g, function (c) {return {"+": "-", "/": "_", "=": ""}[c]});
+            }).join("")).replace(/[=+\/]/g, c => {
+                return {"+": "-", "/": "_", "=": ""}[c]
+            });
         };
-        // Start a new chat whose ChannelName is an RFC-4648 base64url encoded v4 UUID without
-        // hyphens. This ensures that the channel will be will be unique, at least insofar as
-        // UUIDs are unique. Which is inso-extremely-far.
         const newChannelURL = () => getChannelURL(hexToBase64URL(uuidv4().replace(/-/g, "")));
-        // Otherwise you can pick whatever channel name you want.
-        const setDestChannel = () => document.getElementById('channel').action = getChannelURL(escape(document.getElementById("channelnameinput").value));
+        const setDestChannel = () => document.getElementById('channel').action =
+            getChannelURL(escape(document.getElementById("channelnameinput").value));
     </script>
 </head>
 
@@ -48,7 +48,6 @@ simple peer-to-peer group chat
         <input type="submit" value="go">
     </form>
 </div>
-
 
 
 </body>

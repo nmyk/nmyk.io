@@ -1,14 +1,19 @@
 const SEPARATOR = " • ";
 
 const SignalingEvent = {
-    "Entrance": 1,
-    "Exit": 2,
-    "NameChange": 3,
-    "Clear": 4,
-    "Welcome": 5,
-    "RTCOffer": 6,
-    "RTCAnswer": 7,
-    "RTCICECandidate": 8
+    "Entrance": 0,
+    "RTCOffer": 1,
+    "RTCAnswer": 2,
+    "RTCICECandidate": 3,
+    "TURNCredRequest": 4,
+    "TURNCredResponse": 5
+};
+
+const TmpchatEvent = {
+    "Message": 0,
+    "Clear": 1,
+    "NameChange": 2,
+    "Exit": 3
 };
 
 const newMessage = (type, content) => {
@@ -20,6 +25,15 @@ const newMessage = (type, content) => {
     };
 };
 
+const broadcast = message => {
+    for (let id in rtcPeerConns) {
+        let dc = rtcPeerConns[id]["dataChannel"];
+        if (dc && dc.readyState === "open") {
+            dc.send(JSON.stringify(message));
+        }
+    }
+};
+
 const nameTag = (message, isFromMe) => {
     let tag = document.createElement("div");
     let name = document.createElement("span");
@@ -29,8 +43,7 @@ const nameTag = (message, isFromMe) => {
     if (isFromMe) {
         tag.className = "myname";
         tag.innerHTML = SEPARATOR + tag.innerHTML;
-    }
-    else {
+    } else {
         tag.className = "theirname";
         tag.innerHTML = tag.innerHTML + SEPARATOR;
     }
@@ -48,23 +61,44 @@ const shouldStackMsg = (message, lastMsgElement) => {
     return message["from_user"]["id"] === lastMsgUserId;
 };
 
-const doEntrance = user => {
-    if (user["id"] !== myUserId) {
-        let tag = document.createElement("div");
-        let name = document.createElement("span");
-        name.className = user["id"];
-        name.innerHTML = user["name"];
-        tag.appendChild(name);
-        tag.style.display = "inline";
-        tag.innerHTML = SEPARATOR + tag.innerHTML;
-        document.getElementById("namechange").appendChild(tag)
-    }
+const announceEntrance = user => {
+    let nametag = document.createElement("span");
+    nametag.className = user["id"];
+    nametag.textContent = user["name"];
+    announce(nametag.outerHTML + " joined");
+};
+
+const announceExit = user => {
+    let nametag = document.createElement("span");
+    nametag.className = user["id"];
+    nametag.textContent = user["name"];
+    announce(nametag.outerHTML + " left");
+};
+
+const announce = announcementHTML => {
+    let announcement = document.createElement("div");
+    announcement.className = "systemmessage";
+    announcement.innerHTML = announcementHTML;
+    document.getElementById("messagelog").appendChild(announcement);
+};
+
+const appendToRoll = user => {
+    userNames[user["id"]] = user["name"];
+    let tag = document.createElement("div");
+    let name = document.createElement("span");
+    name.className = user["id"];
+    name.innerHTML = user["name"];
+    tag.appendChild(name);
+    tag.style.display = "inline";
+    tag.innerHTML = SEPARATOR + tag.innerHTML;
+    document.getElementById("namechange").appendChild(tag);
 };
 
 const doExit = user => {
     if (user["id"] !== myUserId) {
         let element = document.getElementById("namechange").getElementsByClassName(user["id"])[0];
         element.parentElement.outerHTML = "";
+        announceExit(user);
     }
 };
 
@@ -78,15 +112,20 @@ const doClear = () => {
 
 const doNameChange = message => {
     let userId = message["from_user"]["id"];
+    let newName = message["content"];
+    userNames[userId] = newName;
     let toChange = document.getElementsByClassName(userId);
-    for (let i=0; i<toChange.length; i++) {
-        toChange[i].innerHTML = message["content"];
+    for (let i = 0; i < toChange.length; i++) {
+        toChange[i].innerHTML = newName;
     }
     if (userId === myUserId) {
-        myName = he.unescape(message["content"]);
+        myName = he.unescape(newName);
         document.getElementById("myname").value = myName;
     }
 };
+
+const newNameIsOk = newName =>
+    !(newName === "" || newName === myName || userNames.hasOwnProperty(newName));
 
 const addNewDataChannel = member => {
     let dataChannel = rtcPeerConns[member["id"]]["conn"]
@@ -95,16 +134,30 @@ const addNewDataChannel = member => {
         console.log(`dataChannel for ${member["id"]} has closed`);
         delete rtcPeerConns[member["id"]];
     };
-    dataChannel.onopen = () => console.log(`dataChannel for ${member["id"]} has opened`);
-    dataChannel.onmessage = event => write(JSON.parse(event.data));
+    dataChannel.onopen = () => rtcPeerConns[member["id"]]["dataChannel"] = dataChannel;
+    dataChannel.onmessage = event => handleTmpchatEvent(event);
     rtcPeerConns[member["id"]]["dataChannel"] = dataChannel;
 };
 
-const announce = message => {
-    let announcement = document.createElement("div");
-    announcement.className = "systemmessage";
-    announcement.innerHTML = message.content;
-    document.getElementById("messagelog").appendChild(announcement);
+const handleTmpchatEvent = event => {
+    let message = JSON.parse(event.data);
+    console.log(message);
+    switch (message.type) {
+        case TmpchatEvent.Message:
+            console.log("we in here");
+            write(message);
+            break;
+        case TmpchatEvent.Clear:
+            doClear();
+            break;
+        case TmpchatEvent.NameChange:
+            console.log("we changin names")
+            doNameChange(message);
+            break;
+        case TmpchatEvent.Exit:
+            doExit(message["from_user"]);
+            break;
+    }
 };
 
 const write = message => {
@@ -135,30 +188,31 @@ const info = txt => {
 };
 
 const rtcPeerConns = {};
-
+const userNames = {};
 
 let ws = new WebSocket(`${signalingURL}`);
 
+ws.sendMessage = message => ws.send(JSON.stringify(message));
+
 ws.onopen = () => {
-    let nametag = document.createElement("span");
-    nametag.className = myUserId;
-    nametag.textContent = myName;
-    let content = nametag.outerHTML + " joined";
-    ws.send(JSON.stringify(newMessage(SignalingEvent.Entrance, content)));
+    ws.sendMessage(newMessage(SignalingEvent.TURNCredRequest, null));
 };
 
 window.onunload = window.onbeforeunload = () => {
-    let nametag = document.createElement("span");
-    nametag.className = myUserId;
-    nametag.textContent = myName;
-    let content = nametag.outerHTML + " left";
-    ws.send(JSON.stringify(newMessage(SignalingEvent.Exit, content)));
+    broadcast(newMessage(TmpchatEvent.Exit), null);
     ws.close();
 };
 
-const addNewRTCPeerConn = (member, isLocal) => {
-    let pc =  new RTCPeerConnection({
-        iceServers: [{ urls: "stun:stun.tmpch.at:3478" }]
+const addNewRTCPeerConn = (turnCreds, member, isLocal) => {
+    // isLocal: true if we're already in the chat and adding an
+    // RTCPeerConnection for a new arrival. false if we're adding
+    // RTCPeerConnections for existing members because we're new.
+    let pc = new RTCPeerConnection({
+        iceServers: [{
+            url: "turn:turn.tmpch.at:3478",
+            username: turnCreds["username"],
+            credential: turnCreds["credential"]
+        }]
     });
     pc.oniceconnectionstatechange = () => info(pc.iceConnectionState);
     pc.onicecandidate = event => {
@@ -166,7 +220,7 @@ const addNewRTCPeerConn = (member, isLocal) => {
             let desc = btoa(JSON.stringify(event.candidate));
             let msg = newMessage(SignalingEvent.RTCICECandidate, desc);
             msg["to_user_id"] = member["id"];
-            ws.send(JSON.stringify(msg));
+            ws.sendMessage(msg);
         }
     };
     pc.onnegotiationneeded = () => pc.createOffer()
@@ -176,15 +230,13 @@ const addNewRTCPeerConn = (member, isLocal) => {
                 let desc = btoa(JSON.stringify(pc.localDescription));
                 let msg = newMessage(SignalingEvent.RTCOffer, desc);
                 msg["to_user_id"] = member["id"];
-                ws.send(JSON.stringify(msg));
+                ws.sendMessage(msg);
             }
         })
         .catch(info);
     pc.ondatachannel = function (event) {
-        event.channel.onopen = () => {
-            event.channel.onmessage = e => write(JSON.parse(e.data));
-            rtcPeerConns[member["id"]]["dataChannel"] = event.channel;
-        };
+        event.channel.onopen = () => rtcPeerConns[member["id"]]["dataChannel"] = event.channel;
+        event.channel.onmessage = event => handleTmpchatEvent(event);
     };
     rtcPeerConns[member["id"]] = {
         "conn": pc,
@@ -193,6 +245,7 @@ const addNewRTCPeerConn = (member, isLocal) => {
 
 const answerRTCOffer = message => {
     let offerDesc = JSON.parse(atob(message["content"]));
+    rtcPeerConns.add(message["from_user"], false);
     let peerConn = rtcPeerConns[message["from_user"]["id"]]["conn"];
     peerConn.setRemoteDescription(new RTCSessionDescription(offerDesc))
         .then(() => peerConn.createAnswer())
@@ -201,7 +254,7 @@ const answerRTCOffer = message => {
             let desc = btoa(JSON.stringify(peerConn.localDescription));
             let response = newMessage(SignalingEvent.RTCAnswer, desc);
             response["to_user_id"] = message["from_user"]["id"];
-            ws.send(JSON.stringify(response));
+            ws.sendMessage(response);
         })
         .catch(info);
 };
@@ -211,33 +264,16 @@ ws.onmessage = event => {
     console.log(message);
     switch (message.type) {
         case SignalingEvent.Entrance:
-            if (message["from_user"]["id"] !== myUserId) {
-                addNewRTCPeerConn(message["from_user"], false); // "remote" means "already here"
+            let member = message["content"];
+            if (member["id"] !== myUserId) {
+                rtcPeerConns.add(member, true);
+                addNewDataChannel(member);
+                appendToRoll(member);
             }
-            doEntrance(message["from_user"]);
-            announce(message);
-            break;
-        case SignalingEvent.Exit:
-            doExit(message["from_user"]);
-            announce(message);
-            break;
-        case SignalingEvent.NameChange:
-            doNameChange(message);
-            break;
-        case SignalingEvent.Clear:
-            doClear();
-            break;
-        case SignalingEvent.Welcome:
-            for (let i=0; i < message["content"].length; i++) {
-                let member = message["content"][i];
-                doEntrance(member);
-                if (member["id"] !== myUserId) {
-                    addNewRTCPeerConn(member, true); // "local" means "newly arrived"
-                    addNewDataChannel(member);
-                }
-            }
+            announceEntrance(member);
             break;
         case SignalingEvent.RTCOffer:
+            appendToRoll(message["from_user"]);
             answerRTCOffer(message);
             break;
         case SignalingEvent.RTCAnswer:
@@ -252,6 +288,9 @@ ws.onmessage = event => {
             rtcPeerConns[message["from_user"]["id"]]["conn"]
                 .addIceCandidate(candidate)
                 .catch(info);
+            break;
+        case SignalingEvent.TURNCredResponse:
+            rtcPeerConns.add = (member, isLocal) => addNewRTCPeerConn(message["content"], member, isLocal)
     }
 };
 
@@ -263,34 +302,25 @@ window.onload = () => {
     const input = document.getElementById("messagetext");
 
     document.getElementById("send").onclick = () => {
-        if (!ws || input.value === "") {
+        if (input.value === "") {
             return false;
         }
-        let msg = newMessage(0, input.value);
+        let msg = newMessage(TmpchatEvent.Message, input.value);
         write(msg);
-        for (let id in rtcPeerConns) {
-            let dc = rtcPeerConns[id]["dataChannel"];
-            if (dc && dc.readyState === "open") {
-                dc.send(JSON.stringify(msg));
-            }
-        }
+        broadcast(msg);
         input.value = "";
         return false;
     };
 
     document.getElementById("namechange").onsubmit = () => {
-        if (myName === "") {
+        let newName = he.escape(document.getElementById("myname").value);
+        if (!newNameIsOk(newName)) {
             return false;
         }
-        let message = newMessage(
-            SignalingEvent.NameChange,
-            he.escape(document.getElementById("myname").value)
-        );
+        let message = newMessage(TmpchatEvent.NameChange, newName);
+        console.log(message);
         doNameChange(message);
-        if (!ws) {
-            return false;
-        }
-        ws.send(JSON.stringify(message));
+        broadcast(message);
         input.focus();
         return false;
     };
@@ -310,7 +340,8 @@ window.onload = () => {
             doClear();
             return false;
         }
-        ws.send(JSON.stringify(newMessage(SignalingEvent.Clear, null)));
+        doClear();
+        broadcast(newMessage(TmpchatEvent.Clear, null));
         return false;
     };
 
@@ -321,7 +352,7 @@ window.onload = () => {
 
     let doubleEnterTs; // Clear chat by double-pressing Enter with no text in the input field
     input.onkeypress = event => {
-        if(event.key === "Enter" && !event.shiftKey) {
+        if (event.key === "Enter" && !event.shiftKey) {
             if (input.value === "" && (Date.now() - doubleEnterTs < 150)) {
                 document.getElementById("clear").click();
                 return false;
@@ -336,4 +367,4 @@ window.onload = () => {
     };
 
     input.focus();
-};
+}
