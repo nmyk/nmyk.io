@@ -207,7 +207,7 @@ const addNewRTCPeerConn = (turnCreds, member, isLocal) => {
     // RTCPeerConnections for existing members because we're new.
     let pc = new RTCPeerConnection({
         iceServers: [{
-            urls: "turn:turn.tmpch.at:3478",
+            urls: "turns:turn.tmpch.at:443",
             username: turnCreds["username"],
             credential: turnCreds["credential"]
         }]
