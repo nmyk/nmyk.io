@@ -15,7 +15,6 @@
     line-height: 23px;
     font-size: 16px;
     font-family: 'Inconsolata', monospace;
-    -webkit-appearance: none;
 }
 
 body {
@@ -70,6 +69,15 @@ input, textarea, button, .messagelog {
     background: none;
     border: 1px solid var(--main-text-color);
     border-radius: 4px;
+    height: 23px;
+}
+
+input[type="button"] {
+    padding: 0px;
+}
+
+input[type="submit"] {
+    margin:auto;
 }
 
 .container, .messagelog {
