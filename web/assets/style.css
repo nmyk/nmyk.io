@@ -65,19 +65,20 @@ div.vspace50px {
     height: 50px;
 }
 
-input, textarea, button, .messagelog {
+input, textarea, button, submit, .messagelog {
     background: none;
     border: 1px solid var(--main-text-color);
     border-radius: 4px;
-    height: 23px;
+    height: 27px;
 }
 
 input[type="button"] {
-    padding: 0px;
+    padding: 2px;
 }
 
 input[type="submit"] {
     margin:auto;
+    width: 50px;
 }
 
 .container, .messagelog {
@@ -148,10 +149,6 @@ textarea#messagetext {
 .messagetextcontainer {
     width: calc(100% - 56px);
     float: left;
-}
-
-input[type="submit"] {
-    width: 50px;
 }
 
 hr {
