@@ -101,7 +101,6 @@ func (c *Members) Range(f func(string, *Member) bool) {
 
 type Member struct {
 	Conn *websocket.Conn
-	Name string
 }
 
 func CreateIfNecessary(channelName string) *Channel {
@@ -121,23 +120,9 @@ func CreateIfNecessary(channelName string) *Channel {
 	}
 }
 
-func (c *Channel) GetMembers() []User {
-	users := make([]User, c.Members.Count())
-	i := 0
-	c.Members.Range(
-		func(id string, member *Member) bool {
-			if member.Conn != nil {
-				users[i] = User{id, member.Name}
-				i++
-			}
-			return true
-		})
-	return users
-}
-
 func (c *Channel) AddMember() User {
 	user := User{uuid.New().String(), fmt.Sprintf("anon_%d", atomic.AddUint64(c.AnonIndex, 1))}
-	c.Members.Set(user.ID, &Member{nil, user.Name})
+	c.Members.Set(user.ID, &Member{})
 	return user
 }
 
