@@ -26,14 +26,21 @@
         animation-delay: {{.BgAnimationDelay}}s;">
 <div class="vspace50px"></div>
 <div class="container" style="text-align: center;">
-<a href="{{.AppURL|safeURL}}/" type="home" style="margin:auto;">tmpchat</a>
-<br>
-#{{.ChannelName}}
+    <a href="{{.AppURL|safeURL}}/" type="home" style="margin:auto;">tmpchat</a>
+    <br>
+    #{{.ChannelName}}
 </div>
 
-<div class="container" style="width: 80%;">
-    <div class="messagelog" id="messagelog"></div>
-    <div style="margin-top: 2px; margin-bottom: 10px;">
+<br>
+
+<div class="container" style="height: 440px;width: 440px;">
+    <div class="chatcontainer">
+        <div class="messagelog" id="messagelog"></div>
+    </div>
+</div>
+
+<div class="chatui">
+    <div style="margin-top: 2px;">
         <form id="namechange" style="width: 80%; float: left;">
             online: <input id="myname" autocomplete="off" type="nametext" size=10 maxlength=16 value="{{.User.Name}}">
         </form>
@@ -41,9 +48,11 @@
             <input type="button" id="clear" value="clear">
         </div>
     </div>
+</div>
 
-    <br><br>
+    <br>
 
+<div class="chatui">
     <form id="message">
         <div class="messagetextcontainer">
             <textarea rows=1 id="messagetext"></textarea>
@@ -53,11 +62,10 @@
             <input type="submit" id="send" value="send">
         </div>
     </form>
+</div>
 
     <br>
-
-    <div id="info" style="text-align: center;"></div>
-</div>
+    <div id="info" class="chatui" style="text-align: center;"></div>
 </body>
 
 </html>
