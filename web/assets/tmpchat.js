@@ -125,8 +125,17 @@ const doNameChange = message => {
     }
 };
 
-const newNameIsOk = newName =>
-    !(newName === "" || newName === myName || userNames.hasOwnProperty(newName));
+const newNameIsOk = newName => {
+    if (newName === "" || newName === myName) {
+        return false
+    }
+    for (let id in userNames) {
+        if (userNames[id] === newName) {
+            return false;
+        }
+    }
+    return true;
+};
 
 const addNewDataChannel = member => {
     let dataChannel = rtcPeerConns[member["id"]]["conn"]
