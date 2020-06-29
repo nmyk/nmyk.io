@@ -266,7 +266,6 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 type tmpchatPageData struct {
-	bgData
 	ChannelName  string
 	User         User
 	AppURL       string
@@ -287,7 +286,7 @@ func tmpchatHandler(w http.ResponseWriter, r *http.Request) {
 		channel := CreateIfNecessary(channelName)
 		newUser = channel.AddMember()
 	}
-	d := tmpchatPageData{getBgData(),
+	d := tmpchatPageData{
 		channelName,
 		newUser,
 		os.Getenv("TMPCHAT_URL"),
