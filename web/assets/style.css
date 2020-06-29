@@ -118,20 +118,20 @@ input[type="submit"] {
     padding-left: 20px;
     padding-right: 20px;
     min-width: 360px;
-    width: 480px;
+    max-width: 480px;
 }
 
 .chatui {
-    width: 440px;
+    min-width: 440px;
 }
 
 .chatcontainer {
     height: 400px;
-    width: 440px;
+    max-width: 440px;
     min-width: 360px;
     padding: 20px;
-    display:table-cell;
-    vertical-align:bottom;
+    display: table-cell;
+    vertical-align: bottom;
 }
 
 .messagelog {

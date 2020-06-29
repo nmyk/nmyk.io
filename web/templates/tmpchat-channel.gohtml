@@ -5,7 +5,7 @@
     <link href="https://cdn.nmyk.io/assets/style.css" rel="stylesheet">
     <link href="https://cdn.nmyk.io/assets/favicon.ico" rel="icon">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=500">
     <meta name="description"
           content="tmpchat is a WebRTC-based group text messaging application designed and built by Nick Mykins (nmyk.io)"/>
     <title>tmpch.at - {{.ChannelName}}</title>
@@ -25,13 +25,13 @@
         animation-duration: {{.BgAnimationDuration}}s;
         animation-delay: {{.BgAnimationDelay}}s;">
 <div class="vspace50px"></div>
-<div class="container" style="text-align: center;">
+<div class="container" style="width: 440px;text-align: center;">
     <a href="{{.AppURL|safeURL}}/" type="home" style="margin:auto;">tmpchat</a>
     <br>
     #{{.ChannelName}}
 </div>
 <br>
-<div class="container" style="height: 440px;width: 440px;">
+<div class="container" style="width: 440px;">
     <div class="chatcontainer">
         <div class="messagelog" id="messagelog"></div>
     </div>
