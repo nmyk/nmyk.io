@@ -6,14 +6,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
 	"html/template"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -103,7 +101,7 @@ type Member struct {
 	Conn *websocket.Conn
 }
 
-func CreateIfNecessary(channelName string) *Channel {
+func CreateIfNecessary(channelName string) {
 	var i uint64
 	c := &Channel{
 		Name:      channelName,
@@ -111,19 +109,10 @@ func CreateIfNecessary(channelName string) *Channel {
 		Messages:  make(chan Message),
 		AnonIndex: &i,
 	}
-	if existing, ok := tmpchat.Get(channelName); !ok {
+	if _, ok := tmpchat.Get(channelName); !ok {
 		go c.Run()
 		tmpchat.Set(channelName, c)
-		return c
-	} else {
-		return existing
 	}
-}
-
-func (c *Channel) AddMember() User {
-	user := User{uuid.New().String(), fmt.Sprintf("anon_%d", atomic.AddUint64(c.AnonIndex, 1))}
-	c.Members.Set(user.ID, &Member{})
-	return user
 }
 
 type TURNCreds struct {
@@ -236,7 +225,11 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 		log.Print("upgrade:", err)
 		return
 	}
-	var userID, channelName string
+	userID := r.URL.Query()["userID"][0]
+	channelName := r.URL.Query()["channelName"][0]
+	if ch, ok := tmpchat.Get(channelName); ok {
+		ch.Members.Set(userID, &Member{})
+	}
 	for {
 		_, rawSignal, err := c.ReadMessage()
 		if err != nil {
@@ -247,10 +240,6 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 		message := Message{}
 		if err := json.Unmarshal(rawSignal, &message); err != nil {
 			continue
-		}
-		if channelName == "" {
-			channelName = message.ChannelName
-			userID = message.FromUser.ID
 		}
 		message.fromConn = c
 		if ch, ok := tmpchat.Get(message.ChannelName); ok {
@@ -267,7 +256,6 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 
 type tmpchatPageData struct {
 	ChannelName  string
-	User         User
 	AppURL       string
 	SignalingURL string
 }
@@ -275,7 +263,6 @@ type tmpchatPageData struct {
 func tmpchatHandler(w http.ResponseWriter, r *http.Request) {
 	channelName := r.URL.Path[1:] // Omit leading slash in path
 	var tmpl *template.Template
-	var newUser User
 	fm := template.FuncMap{
 		"safeURL": func(u string) template.URL { return template.URL(u) },
 	}
@@ -283,12 +270,10 @@ func tmpchatHandler(w http.ResponseWriter, r *http.Request) {
 		tmpl = getTemplate("tmpchat-index", fm)
 	} else {
 		tmpl = getTemplate("tmpchat-channel", fm)
-		channel := CreateIfNecessary(channelName)
-		newUser = channel.AddMember()
+		CreateIfNecessary(channelName)
 	}
 	d := tmpchatPageData{
 		channelName,
-		newUser,
 		os.Getenv("TMPCHAT_URL"),
 		os.Getenv("TMPCHAT_SIGNALING_URL"),
 	}

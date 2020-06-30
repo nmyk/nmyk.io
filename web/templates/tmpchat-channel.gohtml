@@ -12,8 +12,6 @@
     <script type="text/javascript" src="https://cdn.nmyk.io/assets/he.js"></script>
     <script>
         const signalingURL = "{{.SignalingURL|safeURL}}";
-        const myUserId = "{{.User.ID}}";
-        let myName = "{{.User.Name}}";
     </script>
     <script type="text/javascript" src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
     <script type="text/javascript" src="https://cdn.nmyk.io/assets/tmpchat.js"></script>
@@ -35,7 +33,7 @@
 <div class="chatui">
     <div style="margin-top: 2px;">
         <form id="namechange" style="width: 80%; float: left;">
-            online: <input id="myname" autocomplete="off" type="nametext" size=10 maxlength=16 value="{{.User.Name}}">
+            online: <input id="myname" autocomplete="off" type="nametext" size=10 maxlength=16>
         </form>
         <div style="display:inline-block;float: right;">
             <input type="button" id="clear" value="clear">

@@ -1,4 +1,5 @@
 const SEPARATOR = " • ";
+const EMOJI = ["🍏", "🍎", "🍐", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🍈", "🍒", "🍑", "🍍", "🥥 ", "🥝", "🍅", "🍆", "🥑", "🥦", "🥒", "🌶", "🌽", "🥕", " 🥔", "🍠", "🥐", "🍞", "🥖", "🥨", "🧀", "🍳", "🥞", "🥓", "🥩", "🍗", "🍖", "🌭", "🍔", "🍟", "🍕", "🥪", "🥙", "🌮", "🌯", "🥗", "🥘", "🥫", "🍝", "🍜", "🍲", "🍛", "🍣", "🍱", "🥟", "🍤", "🍙", "🍚", "🍘", "🍥", "🥠", "🍢", "🍡", "🍧", "🍨", "🍦", "🥧", "🍰", "🎂", "🍮", "🍭", "🍬", "🍫", "🍿", "🍩", "🍪", "🌰", "🥜", "🍯", "🥛", "🍼", "☕", "️🍵", "🥤", "🍶", "🍺", "🍻", "🥂", "🍷", "🥃", "🍸", "🍹", "🍾", "🥡", "⚽", , "🏀", "🏈", "⚾", , "🎾", "🏐", "🏉", "🎱", "🏓", "🏸", "🏒", "🏑", "🏏", "🥅", "⛳", , "🥊", "🥋", "🎽", "🏆", "🥇", "🎭", "🎨", "🎬", "🎤", " 🎧", "🎼", "🎹", "🥁", "🎷", "🎺", "🎸", "🎻", "🎲", "♟", "🎯", "🎳", "🎮", "🎰", "🚗", "🚕", "🚙", "🚌", "🚎", "🏎", "🚓", "🚑", "🚒", "🚐", "🚚", "🚛", "🚜", "🏝", "🏜", "🌋", "🏔", "🏣", "🏤", "🏥", "🏦", "🏨", "🏪", "🏫", "🏩", "💒", "🏛", "🏡", "🎑", "🏞", "🌅", "🌄", "🌠", "🎇", "🎆", "🌇", "🌃", "🌌", "🌉", "🌁", "🔔", "🔧", "🔨", "⚒", "🚬", "⚰", "⚱", "🏺", "🔮", "📿", "💊", "💉", "💎", "📸", "💰", "🔦", "🕯", "☎", "💣", "🗿", "🗽", "🗼", "🏰", "🏯", "🏟", "🎡", "🎢", "🎠", "🚲", "🌺", "🌸", "🌼", "🌻", "🌞", "🌳", "🌴", "🌱", "🌿", "🍀", "🎍", "🎋", "🍃", "🍂", "🍁", "🍄", "🐚", "🌾", "💐", "🌷", "🌹", "🥀", "🐁", "🐀", "🐿", "🦔", "🐾", "🕊", "🐇", "🌵", "🎄", "🐈", "🐓", "🦃", "🦏", "🐪", "🐫", "🦒", "🐡", "🐠", "🐟", "🐬", "🐳", "🐋", "🦈", "🐊", "🐅", "🐆", "🦓", "🦍", "🐃", "🐂", "🐄", "🐎", "🐖", "🐏", "🐑", "🦂", "🐢", "🐍", "🦎", "🦖", "🦕", "🐙", "🦑", "🦐", "🦀", "🦋", "🐌", "🐞", "🐜", "🦆", "🦅", "🦉", "🦇", "🐺", "🐗", "🐴", "🦄", "🐝", "🐛", "🐣", "🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸", "🐵", "🤠", "😈", "👿", " 👹", "👺", "🤡", "💩", "👻", "💀", "☠", "👽", "👾", "🤖", "🎃", "😹", "😻", "🤠", "👠", "👑", "👒", "🎩", "🎓", "🧢", "⛑", "💄", "💍", "💼", "☂"];
 
 const SignalingEvent = {
     "Entrance": 0,
@@ -10,11 +11,23 @@ const SignalingEvent = {
 };
 
 const TmpchatEvent = {
-    "Message": 0,
-    "Clear": 1,
-    "NameChange": 2,
-    "Exit": 3
+    "Message": 6,
+    "Clear": 7,
+    "NameChange": 8,
+    "Exit": 9
 };
+
+const uuidv4 = () => {
+    return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+    );
+};
+
+const myUserId = uuidv4();
+
+const chooseOne = arr => arr[Math.floor(Math.random() * arr.length)];
+
+let myName = chooseOne(EMOJI);
 
 const newMessage = (type, content) => {
     return {
@@ -51,7 +64,7 @@ const nameTag = (message, isFromMe) => {
 };
 
 const shouldStackMsg = (message, lastMsgElement) => {
-    if (message["type"] !== 0 || !lastMsgElement) {
+    if (message["type"] !== TmpchatEvent.Message || !lastMsgElement) {
         return false;
     }
     if (lastMsgElement.className === "systemmessage") { // only stack user messages
@@ -114,7 +127,6 @@ const doClear = () => {
 const doNameChange = message => {
     let userId = message["from_user"]["id"];
     let newName = message["content"];
-    userNames[userId] = newName;
     let toChange = document.getElementsByClassName(userId);
     for (let i = 0; i < toChange.length; i++) {
         toChange[i].innerHTML = newName;
@@ -122,6 +134,8 @@ const doNameChange = message => {
     if (userId === myUserId) {
         myName = he.unescape(newName);
         document.getElementById("myname").value = myName;
+    } else {
+        userNames[userId] = newName;
     }
 };
 
@@ -197,7 +211,7 @@ const info = txt => {
 const rtcPeerConns = {};
 const userNames = {};
 
-let ws = new WebSocket(`${signalingURL}`);
+let ws = new WebSocket(`${signalingURL}/?userID=${myUserId}&channelName=${unescape(window.location.pathname.substr(1))}`);
 
 ws.sendMessage = message => ws.send(JSON.stringify(message));
 
@@ -242,12 +256,50 @@ const addNewRTCPeerConn = (turnCreds, member, isLocal) => {
         })
         .catch(info);
     pc.ondatachannel = function (event) {
-        event.channel.onopen = () => rtcPeerConns[member["id"]]["dataChannel"] = event.channel;
+        event.channel.onopen = () => {
+            rtcPeerConns[member["id"]]["dataChannel"] = event.channel;
+            if (isLocal && userNames[member["id"]] === myName) {
+                let newName = getNewName();
+                let message = newMessage(TmpchatEvent.NameChange, newName);
+                message["from_user"] = member;
+                doNameChange(message);
+                broadcast(message);
+            }
+        };
         event.channel.onmessage = event => handleTmpchatEvent(event);
     };
     rtcPeerConns[member["id"]] = {
         "conn": pc,
     };
+};
+
+const shuffle = str => {
+    let a = str.split(""),
+        n = a.length;
+
+    for (let i = n - 1; i > 0; i--) {
+        let j = Math.floor(Math.random() * (i + 1));
+        let tmp = a[i];
+        a[i] = a[j];
+        a[j] = tmp;
+    }
+    return a.join("");
+};
+
+const getNewName = () => {
+    if (Object.keys(userNames).length > EMOJI.length) {
+        let n = 0;
+        while (!newNameIsOk(n)) {
+            n++
+        }
+        return n
+    }
+    let e = shuffle(EMOJI);
+    for (let i = 0; i < EMOJI.length; i++) {
+        if (newNameIsOk(e[i])) {
+            return e
+        }
+    }
 };
 
 const answerRTCOffer = message => {
@@ -268,35 +320,57 @@ const answerRTCOffer = message => {
 
 ws.onmessage = event => {
     let message = JSON.parse(event.data);
+    console.log(message);
     switch (message.type) {
         case SignalingEvent.Entrance:
-            let member = message["content"];
-            if (member["id"] !== myUserId) {
-                rtcPeerConns.add(member, true);
-                addNewDataChannel(member);
-                appendToRoll(member);
-            }
-            announceEntrance(member);
+            handleEntrance(message);
             break;
         case SignalingEvent.RTCOffer:
-            appendToRoll(message["from_user"]);
-            answerRTCOffer(message);
+            handleRTCOffer(message);
             break;
         case SignalingEvent.RTCAnswer:
-            let answerDesc = JSON.parse(atob(message["content"]));
-            rtcPeerConns[message["from_user"]["id"]]["conn"]
-                .setRemoteDescription(new RTCSessionDescription(answerDesc))
-                .catch(info);
+            handleRTCAnswer(message);
             break;
         case SignalingEvent.RTCICECandidate:
-            let candidate = JSON.parse(atob(message["content"]));
-            rtcPeerConns[message["from_user"]["id"]]["conn"]
-                .addIceCandidate(candidate)
-                .catch(info);
+            handleICECandidate(message);
             break;
         case SignalingEvent.TURNCredResponse:
-            rtcPeerConns.add = (member, isLocal) => addNewRTCPeerConn(message["content"], member, isLocal)
+            handleTURNCredResponse(message);
     }
+};
+
+const handleEntrance = message => {
+    let member = message["content"];
+    if (member["id"] !== myUserId) {
+        rtcPeerConns.add(member, true);
+        addNewDataChannel(member);
+        appendToRoll(member);
+    }
+    announceEntrance(member);
+};
+
+const handleRTCOffer = message => {
+    appendToRoll(message["from_user"]);
+    answerRTCOffer(message);
+};
+
+const handleRTCAnswer = message => {
+    let answerDesc = JSON.parse(atob(message["content"]));
+    rtcPeerConns[message["from_user"]["id"]]["conn"]
+        .setRemoteDescription(new RTCSessionDescription(answerDesc))
+        .catch(info);
+};
+
+const handleICECandidate = message => {
+    let candidate = JSON.parse(atob(message["content"]));
+    rtcPeerConns[message["from_user"]["id"]]["conn"]
+        .addIceCandidate(candidate)
+        .catch(info);
+};
+
+const handleTURNCredResponse = message => {
+    rtcPeerConns.add = (member, isLocal) =>
+        addNewRTCPeerConn(message["content"], member, isLocal)
 };
 
 ws.onerror = () => {
@@ -319,18 +393,18 @@ window.onload = () => {
 
     document.getElementById("myname").onblur =
         document.getElementById("namechange").onsubmit = () => {
-        let newName = he.escape(document.getElementById("myname").value);
-        if (!newNameIsOk(newName)) {
+            let newName = he.escape(document.getElementById("myname").value);
+            if (!newNameIsOk(newName)) {
+                input.focus();
+                document.getElementById("myname").value = myName;
+                return false;
+            }
+            let message = newMessage(TmpchatEvent.NameChange, newName);
+            doNameChange(message);
+            broadcast(message);
             input.focus();
-            document.getElementById("myname").value = myName;
             return false;
-        }
-        let message = newMessage(TmpchatEvent.NameChange, newName);
-        doNameChange(message);
-        broadcast(message);
-        input.focus();
-        return false;
-    };
+        };
 
     document.getElementById("myname").onfocus = () => {
         document.getElementById("myname").value = "";
@@ -367,6 +441,6 @@ window.onload = () => {
             return false;
         }
     };
-
+    document.getElementById("myname").value = myName;
     input.focus();
-}
+};
