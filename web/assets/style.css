@@ -14,7 +14,7 @@
 body {
     color: var(--black);
     text-align: center;
-    background: white;
+    background: floralwhite;
 }
 
 ::selection {
