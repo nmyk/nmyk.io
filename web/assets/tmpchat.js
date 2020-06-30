@@ -299,7 +299,7 @@ const getNewName = () => {
     let e = shuffle(EMOJI);
     for (let i = 0; i < EMOJI.length; i++) {
         if (newNameIsOk(e[i])) {
-            return e
+            return e[i]
         }
     }
 };
