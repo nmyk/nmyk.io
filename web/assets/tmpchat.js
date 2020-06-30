@@ -134,6 +134,7 @@ const doNameChange = message => {
     if (userId === myUserId) {
         myName = he.unescape(newName);
         document.getElementById("myname").value = myName;
+        document.getElementById("myname").size = myName.length;
     } else {
         userNames[userId] = newName;
     }
@@ -158,9 +159,49 @@ const addNewDataChannel = member => {
         console.log(`dataChannel for ${member["id"]} has closed`);
         delete rtcPeerConns[member["id"]];
     };
-    dataChannel.onopen = () => rtcPeerConns[member["id"]]["dataChannel"] = dataChannel;
+    dataChannel.onopen = () => {
+        rtcPeerConns[member["id"]]["dataChannel"] = dataChannel;
+        if (userNames[member["id"]] === myName) {
+            let newName = getNewName();
+            let message = newMessage(TmpchatEvent.NameChange, newName);
+            message["from_user"] = member;
+            doNameChange(message);
+            broadcast(message);
+        }
+    };
     dataChannel.onmessage = event => handleTmpchatEvent(event);
     rtcPeerConns[member["id"]]["dataChannel"] = dataChannel;
+};
+
+const shuffle = array => {
+    let i = array.length, tmp, r;
+    // While there remain elements to shuffle...
+    while (0 !== i) {
+        // Pick a remaining element...
+        r = Math.floor(Math.random() * i);
+        i -= 1;
+        // And swap it with the current element.
+        tmp = array[i];
+        array[i] = array[r];
+        array[r] = tmp;
+    }
+    return array;
+};
+
+const getNewName = () => {
+    if (Object.keys(userNames).length >= EMOJI.length) {
+        let n = 0;
+        while (!newNameIsOk(String(n))) {
+            n += 1;
+        }
+        return String(n);
+    }
+    let e = shuffle(EMOJI);
+    for (let i = 0; i < EMOJI.length; i++) {
+        if (newNameIsOk(e[i])) {
+            return e[i];
+        }
+    }
 };
 
 const handleTmpchatEvent = event => {
@@ -219,7 +260,7 @@ ws.onopen = () => {
     ws.sendMessage(newMessage(SignalingEvent.TURNCredRequest, null));
 };
 
-window.onunload = window.onbeforeunload = () => {
+window.onunload = () => {
     broadcast(newMessage(TmpchatEvent.Exit), null);
     ws.close();
 };
@@ -255,53 +296,13 @@ const addNewRTCPeerConn = (turnCreds, member, isLocal) => {
             }
         })
         .catch(info);
-    pc.ondatachannel = function (event) {
-        event.channel.onopen = () => {
-            rtcPeerConns[member["id"]]["dataChannel"] = event.channel;
-            if (isLocal && userNames[member["id"]] === myName) {
-                let newName = getNewName();
-                let message = newMessage(TmpchatEvent.NameChange, newName);
-                message["from_user"] = member;
-                doNameChange(message);
-                broadcast(message);
-            }
-        };
+    pc.ondatachannel = event => {
+        event.channel.onopen = () => rtcPeerConns[member["id"]]["dataChannel"] = event.channel;
         event.channel.onmessage = event => handleTmpchatEvent(event);
     };
     rtcPeerConns[member["id"]] = {
         "conn": pc,
     };
-};
-
-const shuffle = array => {
-    let i = array.length, tmp, r;
-    // While there remain elements to shuffle...
-    while (0 !== i) {
-        // Pick a remaining element...
-        r = Math.floor(Math.random() * i);
-        i -= 1;
-        // And swap it with the current element.
-        tmp = array[i];
-        array[i] = array[r];
-        array[r] = tmp;
-    }
-    return array;
-};
-
-const getNewName = () => {
-    if (Object.keys(userNames).length >= EMOJI.length) {
-        let n = 0;
-        while (!newNameIsOk(n)) {
-            n++
-        }
-        return n
-    }
-    let e = shuffle(EMOJI);
-    for (let i = 0; i < EMOJI.length; i++) {
-        if (newNameIsOk(e[i])) {
-            return e[i]
-        }
-    }
 };
 
 const answerRTCOffer = message => {
@@ -398,6 +399,7 @@ window.onload = () => {
             if (!newNameIsOk(newName)) {
                 input.focus();
                 document.getElementById("myname").value = myName;
+                document.getElementById("myname").size = myName.length;
                 return false;
             }
             let message = newMessage(TmpchatEvent.NameChange, newName);
@@ -409,6 +411,7 @@ window.onload = () => {
 
     document.getElementById("myname").onfocus = () => {
         document.getElementById("myname").value = "";
+        document.getElementById("myname").size = 10;
         return false;
     };
 
