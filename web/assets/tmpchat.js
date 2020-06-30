@@ -273,21 +273,23 @@ const addNewRTCPeerConn = (turnCreds, member, isLocal) => {
     };
 };
 
-const shuffle = str => {
-    let a = str.split(""),
-        n = a.length;
-
-    for (let i = n - 1; i > 0; i--) {
-        let j = Math.floor(Math.random() * (i + 1));
-        let tmp = a[i];
-        a[i] = a[j];
-        a[j] = tmp;
+const shuffle = array => {
+    let i = array.length, tmp, r;
+    // While there remain elements to shuffle...
+    while (0 !== i) {
+        // Pick a remaining element...
+        r = Math.floor(Math.random() * i);
+        i -= 1;
+        // And swap it with the current element.
+        tmp = array[i];
+        array[i] = array[r];
+        array[r] = tmp;
     }
-    return a.join("");
+    return array;
 };
 
 const getNewName = () => {
-    if (Object.keys(userNames).length > EMOJI.length) {
+    if (Object.keys(userNames).length >= EMOJI.length) {
         let n = 0;
         while (!newNameIsOk(n)) {
             n++
