@@ -46,10 +46,9 @@ func (ch *Chat) Delete(channelName string) {
 }
 
 type Channel struct {
-	Name      string
-	Members   *Members
-	Messages  chan Message
-	AnonIndex *uint64
+	Name     string
+	Members  *Members
+	Messages chan Message
 }
 
 type Members struct {
@@ -102,12 +101,10 @@ type Member struct {
 }
 
 func CreateIfNecessary(channelName string) {
-	var i uint64
 	c := &Channel{
-		Name:      channelName,
-		Members:   &Members{Map: make(map[string]*Member)},
-		Messages:  make(chan Message),
-		AnonIndex: &i,
+		Name:     channelName,
+		Members:  &Members{Map: make(map[string]*Member)},
+		Messages: make(chan Message),
 	}
 	if _, ok := tmpchat.Get(channelName); !ok {
 		go c.Run()
@@ -236,7 +233,6 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println("read:", err)
 			break
 		}
-		log.Printf("recv: %s", rawSignal)
 		message := Message{}
 		if err := json.Unmarshal(rawSignal, &message); err != nil {
 			continue
