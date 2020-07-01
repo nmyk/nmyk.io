@@ -111,7 +111,7 @@ const doExit = message => {
     let user = message["from_user"];
     if (user["id"] !== myUserId) {
         let element = document.getElementById("namechange").getElementsByClassName(user["id"])[0];
-        if (element.parentElement) {
+        if (element) {
             element.parentElement.outerHTML = "";
             announceExit(user);
         }
