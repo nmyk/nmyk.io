@@ -3,18 +3,18 @@ const EMOJI = ["🍏", "🍎", "🍐", "🍊", "🍋", "🍌", "🍉", "🍇", "
 
 const SignalingEvent = {
     "Entrance": 0,
-    "RTCOffer": 1,
-    "RTCAnswer": 2,
-    "RTCICECandidate": 3,
-    "TURNCredRequest": 4,
-    "TURNCredResponse": 5
+    "Exit": 1,
+    "RTCOffer": 2,
+    "RTCAnswer": 3,
+    "RTCICECandidate": 4,
+    "TURNCredRequest": 5,
+    "TURNCredResponse": 6
 };
 
 const TmpchatEvent = {
-    "Message": 6,
-    "Clear": 7,
-    "NameChange": 8,
-    "Exit": 9
+    "Message": 7,
+    "Clear": 8,
+    "NameChange": 9
 };
 
 const uuidv4 = () => {
@@ -84,7 +84,7 @@ const announceEntrance = user => {
 const announceExit = user => {
     let nametag = document.createElement("span");
     nametag.className = user["id"];
-    nametag.textContent = user["name"];
+    nametag.textContent = userNames[user["id"]];
     announce(nametag.outerHTML + " left");
 };
 
@@ -105,15 +105,6 @@ const appendToRoll = user => {
     tag.style.display = "inline";
     tag.innerHTML = SEPARATOR + tag.innerHTML;
     document.getElementById("namechange").appendChild(tag);
-};
-
-const doExit = message => {
-    let user = message["from_user"];
-    if (user["id"] !== myUserId) {
-        let element = document.getElementById("namechange").getElementsByClassName(user["id"])[0];
-        element.parentElement.outerHTML = "";
-        announceExit(user);
-    }
 };
 
 const doClear = () => {
@@ -216,9 +207,6 @@ const handleTmpchatEvent = event => {
         case TmpchatEvent.NameChange:
             doNameChange(message);
             break;
-        case TmpchatEvent.Exit:
-            doExit(message);
-            break;
     }
 };
 
@@ -258,11 +246,6 @@ ws.sendMessage = message => ws.send(JSON.stringify(message));
 
 ws.onopen = () => {
     ws.sendMessage(newMessage(SignalingEvent.TURNCredRequest, null));
-};
-
-window.onbeforeunload = () => {
-    broadcast(newMessage(TmpchatEvent.Exit), null);
-    ws.close();
 };
 
 const addNewRTCPeerConn = (turnCreds, member, isLocal) => {
@@ -327,6 +310,9 @@ ws.onmessage = event => {
         case SignalingEvent.Entrance:
             handleEntrance(message);
             break;
+        case SignalingEvent.Exit:
+            handleExit(message);
+            break;
         case SignalingEvent.RTCOffer:
             handleRTCOffer(message);
             break;
@@ -349,6 +335,15 @@ const handleEntrance = message => {
         appendToRoll(member);
     }
     announceEntrance(member);
+};
+
+const handleExit = message => {
+    let user = message["from_user"];
+    if (user["id"] !== myUserId) {
+        let element = document.getElementById("namechange").getElementsByClassName(user["id"])[0];
+        element.parentElement.outerHTML = "";
+        announceExit(user);
+    }
 };
 
 const handleRTCOffer = message => {

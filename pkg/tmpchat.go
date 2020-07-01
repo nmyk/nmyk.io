@@ -130,10 +130,6 @@ func GetTURNCreds(userID string) TURNCreds {
 func (c *Channel) Run() {
 	for msg := range c.Messages {
 		switch msg.Type {
-		case RTCOffer, RTCAnswer, RTCICECandidate:
-			if member, ok := c.Members.Get(msg.ToUserID); ok {
-				msg.SendTo(member)
-			}
 		case TURNCredRequest:
 			if member, ok := c.Members.Get(msg.FromUser.ID); ok && member.Conn == nil {
 				member.Conn = msg.fromConn
@@ -148,6 +144,12 @@ func (c *Channel) Run() {
 					Type:    Entrance,
 					Content: msg.FromUser,
 				})
+		case RTCOffer, RTCAnswer, RTCICECandidate:
+			if member, ok := c.Members.Get(msg.ToUserID); ok {
+				msg.SendTo(member)
+			}
+		case Exit:
+			c.Broadcast(msg)
 		}
 	}
 }
@@ -200,6 +202,7 @@ type EventType int
 
 const (
 	Entrance EventType = iota
+	Exit
 	RTCOffer
 	RTCAnswer
 	RTCICECandidate
@@ -231,6 +234,9 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 		_, rawSignal, err := c.ReadMessage()
 		if err != nil {
 			log.Println("read:", err)
+			if ch, ok := tmpchat.Get(channelName); ok {
+				ch.Messages <- Message{Type: Exit, FromUser: User{ID: userID}}
+			}
 			break
 		}
 		message := Message{}
