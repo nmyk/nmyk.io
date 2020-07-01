@@ -260,15 +260,13 @@ ws.onopen = () => {
     ws.sendMessage(newMessage(SignalingEvent.TURNCredRequest, null));
 };
 
-let closed = false;
 window.onbeforeunload = () => {
     broadcast(newMessage(TmpchatEvent.Exit), null);
     ws.close();
-    closed = true;
 };
 
 window.onunload = () => {
-    if (!closed) {
+    if (ws.readyState !== WebSocket.CLOSED) {
         broadcast(newMessage(TmpchatEvent.Exit), null);
         ws.close();
     }
