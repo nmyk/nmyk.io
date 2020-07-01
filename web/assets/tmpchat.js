@@ -260,7 +260,7 @@ ws.onopen = () => {
     ws.sendMessage(newMessage(SignalingEvent.TURNCredRequest, null));
 };
 
-window.onunload = () => {
+window.onbeforeunload = () => {
     broadcast(newMessage(TmpchatEvent.Exit), null);
     ws.close();
 };
