@@ -260,9 +260,18 @@ ws.onopen = () => {
     ws.sendMessage(newMessage(SignalingEvent.TURNCredRequest, null));
 };
 
+let closed = false;
 window.onbeforeunload = () => {
     broadcast(newMessage(TmpchatEvent.Exit), null);
     ws.close();
+    closed = true;
+};
+
+window.onunload = () => {
+    if (!closed) {
+        broadcast(newMessage(TmpchatEvent.Exit), null);
+        ws.close();
+    }
 };
 
 const addNewRTCPeerConn = (turnCreds, member, isLocal) => {
