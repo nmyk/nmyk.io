@@ -265,6 +265,7 @@ ws.onopen = () => {
 window.onunload = window.onbeforeunload = () => {
     broadcast(newMessage(TmpchatEvent.Exit), null);
     ws.close();
+    window.close();
 };
 
 const addNewRTCPeerConn = (turnCreds, member, isLocal) => {
