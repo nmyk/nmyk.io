@@ -111,10 +111,8 @@ const doExit = message => {
     let user = message["from_user"];
     if (user["id"] !== myUserId) {
         let element = document.getElementById("namechange").getElementsByClassName(user["id"])[0];
-        if (element) {
-            element.parentElement.outerHTML = "";
-            announceExit(user);
-        }
+        element.parentElement.outerHTML = "";
+        announceExit(user);
     }
 };
 
@@ -262,10 +260,9 @@ ws.onopen = () => {
     ws.sendMessage(newMessage(SignalingEvent.TURNCredRequest, null));
 };
 
-window.onunload = window.onbeforeunload = () => {
+window.onunload = () => {
     broadcast(newMessage(TmpchatEvent.Exit), null);
     ws.close();
-    window.close();
 };
 
 const addNewRTCPeerConn = (turnCreds, member, isLocal) => {
