@@ -100,15 +100,18 @@ type Member struct {
 	Conn *websocket.Conn
 }
 
-func CreateIfNecessary(channelName string) {
+func Summon(channelName string) *Channel {
 	c := &Channel{
 		Name:     channelName,
 		Members:  &Members{Map: make(map[string]*Member)},
 		Messages: make(chan Message),
 	}
-	if _, ok := tmpchat.Get(channelName); !ok {
+	if existing, ok := tmpchat.Get(channelName); !ok {
 		go c.Run()
 		tmpchat.Set(channelName, c)
+		return c
+	} else {
+		return existing
 	}
 }
 
@@ -131,9 +134,6 @@ func (c *Channel) Run() {
 	for msg := range c.Messages {
 		switch msg.Type {
 		case TURNCredRequest:
-			if member, ok := c.Members.Get(msg.FromUser.ID); ok && member.Conn == nil {
-				member.Conn = msg.fromConn
-			}
 			msg.Reply(
 				Message{
 					Type:    TURNCredResponse,
@@ -227,9 +227,7 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	userID := r.URL.Query()["userID"][0]
 	channelName := r.URL.Query()["channelName"][0]
-	if ch, ok := tmpchat.Get(channelName); ok {
-		ch.Members.Set(userID, &Member{})
-	}
+	Summon(channelName).Members.Set(userID, &Member{c})
 	for {
 		_, rawSignal, err := c.ReadMessage()
 		if err != nil {
@@ -272,7 +270,6 @@ func tmpchatHandler(w http.ResponseWriter, r *http.Request) {
 		tmpl = getTemplate("tmpchat-index", fm)
 	} else {
 		tmpl = getTemplate("tmpchat-channel", fm)
-		CreateIfNecessary(channelName)
 	}
 	d := tmpchatPageData{
 		channelName,
