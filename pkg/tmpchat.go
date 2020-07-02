@@ -56,6 +56,10 @@ type Members struct {
 	Map map[string]*Member
 }
 
+type Member struct {
+	Conn *websocket.Conn
+}
+
 func (c *Members) Get(id string) (*Member, bool) {
 	c.RLock()
 	member, ok := c.Map[id]
@@ -94,10 +98,6 @@ func (c *Members) Range(f func(string, *Member) bool) {
 			return
 		}
 	}
-}
-
-type Member struct {
-	Conn *websocket.Conn
 }
 
 func Summon(channelName string) *Channel {
@@ -160,30 +160,6 @@ func (c *Channel) Close() {
 	log.Println(fmt.Sprintf("cleaned up empty channel %s", c.Name))
 }
 
-func (m Message) Reply(msg Message) {
-	response, _ := json.Marshal(msg)
-	if err := m.fromConn.WriteMessage(1, response); err != nil {
-		log.Println("write:", err)
-	}
-}
-
-func (m Message) SendTo(member *Member) {
-	message, _ := json.Marshal(m)
-	if err := member.Conn.WriteMessage(1, message); err != nil {
-		log.Println("write:", err)
-	}
-}
-
-func (c *Channel) Broadcast(msg Message) {
-	message, _ := json.Marshal(msg)
-	c.Members.Range(func(_ string, member *Member) bool {
-		if err := member.Conn.WriteMessage(1, message); err != nil {
-			log.Println("write:", err)
-		}
-		return true
-	})
-}
-
 type Message struct {
 	fromConn    *websocket.Conn
 	ChannelName string      `json:"channel_name,omitempty"`
@@ -209,6 +185,30 @@ const (
 	TURNCredRequest
 	TURNCredResponse
 )
+
+func (m Message) Reply(msg Message) {
+	response, _ := json.Marshal(msg)
+	if err := m.fromConn.WriteMessage(1, response); err != nil {
+		log.Println("write:", err)
+	}
+}
+
+func (m Message) SendTo(member *Member) {
+	message, _ := json.Marshal(m)
+	if err := member.Conn.WriteMessage(1, message); err != nil {
+		log.Println("write:", err)
+	}
+}
+
+func (c *Channel) Broadcast(msg Message) {
+	message, _ := json.Marshal(msg)
+	c.Members.Range(func(_ string, member *Member) bool {
+		if err := member.Conn.WriteMessage(1, message); err != nil {
+			log.Println("write:", err)
+		}
+		return true
+	})
+}
 
 func signalingHandler(w http.ResponseWriter, r *http.Request) {
 	upgrader := websocket.Upgrader{
