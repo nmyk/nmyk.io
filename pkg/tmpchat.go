@@ -234,6 +234,10 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println("read:", err)
 			if ch, ok := tmpchat.Get(channelName); ok {
 				ch.Messages <- Message{Type: Exit, FromUser: User{ID: userID}}
+				ch.Members.Delete(userID)
+				if ch.Members.Count() == 0 {
+					ch.Close()
+				}
 			}
 			break
 		}
@@ -244,12 +248,6 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 		message.fromConn = c
 		if ch, ok := tmpchat.Get(message.ChannelName); ok {
 			ch.Messages <- message
-		}
-	}
-	if ch, ok := tmpchat.Get(channelName); ok {
-		ch.Members.Delete(userID)
-		if ch.Members.Count() == 0 {
-			ch.Close()
 		}
 	}
 }

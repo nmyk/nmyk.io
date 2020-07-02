@@ -67,7 +67,7 @@ const shouldStackMsg = (message, lastMsgElement) => {
     if (message["type"] !== TmpchatEvent.Message || !lastMsgElement) {
         return false;
     }
-    if (lastMsgElement.className === "systemmessage") { // only stack user messages
+    if (lastMsgElement.className === "systemmessage") {
         return false;
     }
     let lastMsgUserId = lastMsgElement.firstElementChild.firstElementChild.className;
@@ -166,12 +166,9 @@ const addNewDataChannel = member => {
 
 const shuffle = array => {
     let i = array.length, tmp, r;
-    // While there remain elements to shuffle...
     while (0 !== i) {
-        // Pick a remaining element...
         r = Math.floor(Math.random() * i);
         i -= 1;
-        // And swap it with the current element.
         tmp = array[i];
         array[i] = array[r];
         array[r] = tmp;
@@ -343,6 +340,8 @@ const handleExit = message => {
         let element = document.getElementById("namechange").getElementsByClassName(user["id"])[0];
         element.parentElement.outerHTML = "";
         announceExit(user);
+        delete userNames[user["id"]];
+        delete rtcPeerConns[user["id"]];
     }
 };
 
