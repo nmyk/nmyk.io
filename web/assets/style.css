@@ -67,8 +67,15 @@ input[type="submit"] {
 }
 
 .messagelog {
-    max-height:400px;
-    overflow:auto;
+    max-height: 400px;
+    overflow: auto;
+}
+
+#namechange {
+    width: 80%;
+    float: left;
+    max-height: 46px;
+    overflow: scroll;
 }
 
 .myname {
