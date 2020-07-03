@@ -112,15 +112,14 @@ func Materialize(channelName string) *Channel {
 }
 
 type TURNCreds struct {
-	TURNUserName string `json:"username"`
-	Pass         string `json:"credential"`
+	Username string `json:"username"`
+	Password string `json:"credential"`
 }
 
 func GetTURNCreds(userID string) TURNCreds {
 	expiresAt := time.Now().Add(24 * time.Hour).Unix()
 	turnUserName := fmt.Sprintf("%d:%s", expiresAt, userID)
-	k := []byte(os.Getenv("TURN_AUTH_SECRET"))
-	h := hmac.New(sha1.New, k)
+	h := hmac.New(sha1.New, []byte(os.Getenv("TURN_AUTH_SECRET")))
 	h.Write([]byte(turnUserName))
 	password := base64.StdEncoding.EncodeToString(h.Sum(nil))
 	return TURNCreds{turnUserName, password}
@@ -167,7 +166,7 @@ type Message struct {
 
 type User struct {
 	ID   string `json:"id"`
-	Name string `json:"name"`
+	Name string `json:"name,omitempty"`
 }
 
 type EventType int
