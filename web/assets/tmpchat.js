@@ -243,6 +243,7 @@ ws.sendMessage = message => ws.send(JSON.stringify(message));
 
 ws.onopen = () => {
     ws.sendMessage(newMessage(SignalingEvent.TURNCredRequest, null));
+    info("connected");
 };
 
 const addNewRTCPeerConn = (turnCreds, member, isLocal) => {
@@ -256,7 +257,6 @@ const addNewRTCPeerConn = (turnCreds, member, isLocal) => {
             credential: turnCreds["credential"]
         }]
     });
-    pc.oniceconnectionstatechange = () => info(pc.iceConnectionState);
     pc.onicecandidate = event => {
         if (event.candidate !== null) {
             let desc = btoa(JSON.stringify(event.candidate));
@@ -369,7 +369,8 @@ const handleTURNCredResponse = message => {
         addNewRTCPeerConn(message["content"], member, isLocal)
 };
 
-ws.onerror = () => {
+ws.onerror = event => {
+    info(event);
     ws.close();
 };
 
