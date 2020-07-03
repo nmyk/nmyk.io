@@ -215,16 +215,16 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 			return originURL.String() == os.Getenv("TMPCHAT_URL")
 		},
 	}
-	c, err := upgrader.Upgrade(w, r, nil)
+	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Print("upgrade:", err)
 		return
 	}
 	userID := r.URL.Query()["userID"][0]
 	channelName := r.URL.Query()["channelName"][0]
-	Materialize(channelName).Members.Set(userID, c)
+	Materialize(channelName).Members.Set(userID, conn)
 	for {
-		_, rawSignal, err := c.ReadMessage()
+		_, rawSignal, err := conn.ReadMessage()
 		if err != nil {
 			log.Println("read:", err)
 			if ch, ok := tmpchat.Get(channelName); ok {
@@ -240,7 +240,7 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 		if err := json.Unmarshal(rawSignal, &message); err != nil {
 			continue
 		}
-		message.fromConn = c
+		message.fromConn = conn
 		if ch, ok := tmpchat.Get(message.ChannelName); ok {
 			ch.Messages <- message
 		}
