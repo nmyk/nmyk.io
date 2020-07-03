@@ -100,7 +100,7 @@ func (c *Members) Range(f func(string, *Member) bool) {
 	}
 }
 
-func Summon(channelName string) *Channel {
+func Materialize(channelName string) *Channel {
 	c := &Channel{
 		Name:     channelName,
 		Members:  &Members{Map: make(map[string]*Member)},
@@ -227,7 +227,7 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	userID := r.URL.Query()["userID"][0]
 	channelName := r.URL.Query()["channelName"][0]
-	Summon(channelName).Members.Set(userID, &Member{c})
+	Materialize(channelName).Members.Set(userID, &Member{c})
 	for {
 		_, rawSignal, err := c.ReadMessage()
 		if err != nil {
