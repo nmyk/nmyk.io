@@ -77,7 +77,7 @@ func (c *Members) Delete(id string) {
 
 func (c *Members) Count() int {
 	var n int
-	c.Range(func(_ string, member *websocket.Conn) bool {
+	c.Range(func(member *websocket.Conn) bool {
 		if member != nil {
 			n++
 		}
@@ -86,11 +86,11 @@ func (c *Members) Count() int {
 	return n
 }
 
-func (c *Members) Range(f func(string, *websocket.Conn) bool) {
+func (c *Members) Range(f func(*websocket.Conn) bool) {
 	c.RLock()
 	defer c.RUnlock()
-	for id, member := range c.Map {
-		if next := f(id, member); !next {
+	for _, member := range c.Map {
+		if next := f(member); !next {
 			return
 		}
 	}
@@ -198,7 +198,7 @@ func (m Message) SendTo(member *websocket.Conn) {
 
 func (c *Channel) Broadcast(msg Message) {
 	message, _ := json.Marshal(msg)
-	c.Members.Range(func(_ string, member *websocket.Conn) bool {
+	c.Members.Range(func(member *websocket.Conn) bool {
 		if err := member.WriteMessage(1, message); err != nil {
 			log.Println("write:", err)
 		}
