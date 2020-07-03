@@ -243,7 +243,6 @@ ws.sendMessage = message => ws.send(JSON.stringify(message));
 
 ws.onopen = () => {
     ws.sendMessage(newMessage(SignalingEvent.TURNCredRequest, null));
-    info("connected");
 };
 
 const addNewRTCPeerConn = (turnCreds, member, isLocal) => {
