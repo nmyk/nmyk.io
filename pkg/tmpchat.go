@@ -53,21 +53,17 @@ type Channel struct {
 
 type Members struct {
 	sync.RWMutex
-	Map map[string]*Member
+	Map map[string]*websocket.Conn
 }
 
-type Member struct {
-	Conn *websocket.Conn
-}
-
-func (c *Members) Get(id string) (*Member, bool) {
+func (c *Members) Get(id string) (*websocket.Conn, bool) {
 	c.RLock()
 	member, ok := c.Map[id]
 	c.RUnlock()
 	return member, ok
 }
 
-func (c *Members) Set(id string, member *Member) {
+func (c *Members) Set(id string, member *websocket.Conn) {
 	c.Lock()
 	c.Map[id] = member
 	c.Unlock()
@@ -81,8 +77,8 @@ func (c *Members) Delete(id string) {
 
 func (c *Members) Count() int {
 	var n int
-	c.Range(func(_ string, member *Member) bool {
-		if member.Conn != nil {
+	c.Range(func(_ string, member *websocket.Conn) bool {
+		if member != nil {
 			n++
 		}
 		return true
@@ -90,7 +86,7 @@ func (c *Members) Count() int {
 	return n
 }
 
-func (c *Members) Range(f func(string, *Member) bool) {
+func (c *Members) Range(f func(string, *websocket.Conn) bool) {
 	c.RLock()
 	defer c.RUnlock()
 	for id, member := range c.Map {
@@ -103,7 +99,7 @@ func (c *Members) Range(f func(string, *Member) bool) {
 func Materialize(channelName string) *Channel {
 	c := &Channel{
 		Name:     channelName,
-		Members:  &Members{Map: make(map[string]*Member)},
+		Members:  &Members{Map: make(map[string]*websocket.Conn)},
 		Messages: make(chan Message),
 	}
 	if existing, ok := tmpchat.Get(channelName); !ok {
@@ -193,17 +189,17 @@ func (m Message) Reply(msg Message) {
 	}
 }
 
-func (m Message) SendTo(member *Member) {
+func (m Message) SendTo(member *websocket.Conn) {
 	message, _ := json.Marshal(m)
-	if err := member.Conn.WriteMessage(1, message); err != nil {
+	if err := member.WriteMessage(1, message); err != nil {
 		log.Println("write:", err)
 	}
 }
 
 func (c *Channel) Broadcast(msg Message) {
 	message, _ := json.Marshal(msg)
-	c.Members.Range(func(_ string, member *Member) bool {
-		if err := member.Conn.WriteMessage(1, message); err != nil {
+	c.Members.Range(func(_ string, member *websocket.Conn) bool {
+		if err := member.WriteMessage(1, message); err != nil {
 			log.Println("write:", err)
 		}
 		return true
@@ -227,7 +223,7 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	userID := r.URL.Query()["userID"][0]
 	channelName := r.URL.Query()["channelName"][0]
-	Materialize(channelName).Members.Set(userID, &Member{c})
+	Materialize(channelName).Members.Set(userID, c)
 	for {
 		_, rawSignal, err := c.ReadMessage()
 		if err != nil {
