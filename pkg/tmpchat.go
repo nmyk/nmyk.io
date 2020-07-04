@@ -143,8 +143,6 @@ func (c *Channel) Run() {
 			if member, ok := c.Members.Get(msg.ToUserID); ok {
 				msg.SendTo(member)
 			}
-		case Exit:
-			c.Broadcast(msg)
 		}
 	}
 }
@@ -228,7 +226,7 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Println("read:", err)
 			if ch, ok := tmpchat.Get(channelName); ok {
-				ch.Messages <- Message{Type: Exit, FromUser: User{ID: userID}}
+				ch.Broadcast(Message{Type: Exit, FromUser: User{ID: userID}})
 				ch.Members.Delete(userID)
 				if ch.Members.Count() == 0 {
 					ch.Close()
