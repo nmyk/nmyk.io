@@ -173,10 +173,11 @@ const getNewName = () => {
 
 const parseAndValidate = (event, channel) => {
     let message = JSON.parse(event.data), nothing = {};
-    let userID =
+    let userID = (
         message &&
         message["from_user"] &&
-        message["from_user"]["id"];
+        message["from_user"]["id"]
+    );
     let isValid = (
         message["type"] &&
         userID &&
