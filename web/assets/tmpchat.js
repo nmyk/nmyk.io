@@ -143,27 +143,6 @@ const newNameIsOk = newName => {
     return true;
 };
 
-const addNewDataChannel = member => {
-    let dataChannel = rtcPeerConns[member["id"]]["conn"]
-        .createDataChannel(unescape(window.location.pathname.substr(1)));
-    dataChannel.onclose = () => {
-        console.log(`dataChannel for ${member["id"]} has closed`);
-        delete rtcPeerConns[member["id"]];
-    };
-    dataChannel.onopen = () => {
-        rtcPeerConns[member["id"]]["dataChannel"] = dataChannel;
-        if (userNames[member["id"]] === myName) {
-            let newName = getNewName();
-            let message = newMessage(TmpchatEvent.NameChange, newName);
-            message["from_user"] = member;
-            doNameChange(message);
-            broadcast(message);
-        }
-    };
-    dataChannel.onmessage = event => handleTmpchatEvent(event);
-    rtcPeerConns[member["id"]]["dataChannel"] = dataChannel;
-};
-
 const shuffle = array => {
     let i = array.length, tmp, r;
     while (0 !== i) {
@@ -192,8 +171,24 @@ const getNewName = () => {
     }
 };
 
-const handleTmpchatEvent = event => {
-    let message = JSON.parse(event.data);
+const parseAndValidate = (event, channel) => {
+    let message = JSON.parse(event.data), nothing = {};
+    let userID =
+        message &&
+        message["from_user"] &&
+        message["from_user"]["id"];
+    let isValid = (
+        message["type"] &&
+        userID &&
+        userID !== myUserId &&
+        rtcPeerConns.hasOwnProperty(userID) &&
+        rtcPeerConns[userID]["dataChannel"] === channel
+    );
+    return isValid ? message : nothing;
+};
+
+const handleTmpchatEvent = (event, channel) => {
+    let message = parseAndValidate(event, channel);
     switch (message.type) {
         case TmpchatEvent.Message:
             write(message);
@@ -276,8 +271,16 @@ const addNewRTCPeerConn = (turnCreds, member, isLocal) => {
         })
         .catch(info);
     pc.ondatachannel = event => {
-        event.channel.onopen = () => rtcPeerConns[member["id"]]["dataChannel"] = event.channel;
-        event.channel.onmessage = event => handleTmpchatEvent(event);
+        event.channel.onopen = () => {
+            rtcPeerConns[member["id"]]["dataChannel"] = event.channel;
+            if (!isLocal && userNames[member["id"]] === myName) {
+                let newName = getNewName();
+                let message = newMessage(TmpchatEvent.NameChange, newName);
+                doNameChange(message);
+                broadcast(message);
+            }
+        };
+        event.channel.onmessage = e => handleTmpchatEvent(e, event.channel);
     };
     rtcPeerConns[member["id"]] = {
         "conn": pc,
@@ -298,6 +301,18 @@ const answerRTCOffer = message => {
             ws.sendMessage(response);
         })
         .catch(info);
+};
+
+const addNewDataChannel = member => {
+    let dataChannel = rtcPeerConns[member["id"]]["conn"]
+        .createDataChannel(unescape(window.location.pathname.substr(1)));
+    dataChannel.onclose = () => {
+        console.log(`dataChannel for ${member["id"]} has closed`);
+        delete rtcPeerConns[member["id"]];
+    };
+    dataChannel.onopen = () => rtcPeerConns[member["id"]]["dataChannel"] = dataChannel;
+    dataChannel.onmessage = event => handleTmpchatEvent(event, dataChannel);
+    rtcPeerConns[member["id"]]["dataChannel"] = dataChannel;
 };
 
 ws.onmessage = event => {
