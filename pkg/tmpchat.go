@@ -207,8 +207,14 @@ func (c *Channel) Broadcast(msg Message) {
 }
 
 func signalingHandler(w http.ResponseWriter, r *http.Request) {
-	userID := r.URL.Query()["userID"][0]
-	channelName := r.URL.Query()["channelName"][0]
+	params := r.URL.Query()
+	var userID, channelName string
+	if vals, ok := params["userID"]; ok {
+		userID = vals[0]
+	}
+	if vals, ok := params["channelName"]; ok {
+		channelName = vals[0]
+	}
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(*http.Request) bool {
 			isValidUser := tmpchat.Turnstile.Verify(userID)
