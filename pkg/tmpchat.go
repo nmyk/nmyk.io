@@ -20,13 +20,13 @@ import (
 
 type Chat struct {
 	sync.RWMutex
-	Registry *Registry
-	Channels map[string]*Channel
+	Turnstile *Turnstile
+	Channels  map[string]*Channel
 }
 
 var tmpchat = &Chat{
-	Registry: &Registry{m: make(map[string]struct{})},
-	Channels: make(map[string]*Channel),
+	Turnstile: &Turnstile{m: make(map[string]struct{})},
+	Channels:  make(map[string]*Channel),
 }
 
 func (ch *Chat) Get(channelName string) (*Channel, bool) {
@@ -211,7 +211,7 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 	channelName := r.URL.Query()["channelName"][0]
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(*http.Request) bool {
-			isValidUser := tmpchat.Registry.Request(userID)
+			isValidUser := tmpchat.Turnstile.Exit(userID)
 			originURL, err := url.Parse(r.Header["Origin"][0])
 			if err != nil {
 				return false
@@ -250,32 +250,32 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type Registry struct {
+type Turnstile struct {
 	sync.RWMutex
 	m map[string]struct{}
 }
 
-func (r *Registry) Submit(userID string) bool {
-	r.RLock()
-	_, ok := r.m[userID]
-	r.RUnlock()
+func (t *Turnstile) Enter(userID string) bool {
+	t.RLock()
+	_, ok := t.m[userID]
+	t.RUnlock()
 	if ok {
 		return false
 	}
-	r.Lock()
-	r.m[userID] = struct{}{}
-	r.Unlock()
+	t.Lock()
+	t.m[userID] = struct{}{}
+	t.Unlock()
 	return true
 }
 
-func (r *Registry) Request(userID string) bool {
-	r.RLock()
-	_, ok := r.m[userID]
-	r.RUnlock()
+func (t *Turnstile) Exit(userID string) bool {
+	t.RLock()
+	_, ok := t.m[userID]
+	t.RUnlock()
 	if ok {
-		r.Lock()
-		delete(r.m, userID)
-		r.Unlock()
+		t.Lock()
+		delete(t.m, userID)
+		t.Unlock()
 		return true
 	}
 	return false
@@ -300,7 +300,7 @@ func tmpchatHandler(w http.ResponseWriter, r *http.Request) {
 		tmpl = getTemplate("tmpchat-channel", fm)
 	}
 	userID := uuid.New().String()
-	if ok := tmpchat.Registry.Submit(userID); !ok {
+	if ok := tmpchat.Turnstile.Enter(userID); !ok {
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
