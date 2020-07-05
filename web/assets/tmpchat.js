@@ -23,7 +23,6 @@ let myName = chooseOne(EMOJI);
 
 const newMessage = (type, content) => {
     return {
-        "channel_name": unescape(window.location.pathname.substr(1)),
         "from_user": {"id": myUserId, "name": myName},
         "type": type,
         "content": content

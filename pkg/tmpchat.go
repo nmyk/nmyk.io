@@ -157,12 +157,11 @@ func (c *Channel) Close() {
 }
 
 type Message struct {
-	fromConn    *websocket.Conn
-	ChannelName string      `json:"channel_name,omitempty"`
-	FromUser    User        `json:"from_user,omitempty"`
-	ToUserID    string      `json:"to_user_id,omitempty"`
-	Type        EventType   `json:"type"`
-	Content     interface{} `json:"content"`
+	fromConn *websocket.Conn
+	FromUser User        `json:"from_user,omitempty"`
+	ToUserID string      `json:"to_user_id,omitempty"`
+	Type     EventType   `json:"type"`
+	Content  interface{} `json:"content"`
 }
 
 type User struct {
@@ -256,7 +255,7 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		message.fromConn = conn
-		if ch, ok := tmpchat.Get(message.ChannelName); ok {
+		if ch, ok := tmpchat.Get(channelName); ok {
 			ch.Messages <- message
 		}
 	}
