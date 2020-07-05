@@ -108,18 +108,22 @@ const doClear = () => {
 
 const doNameChange = message => {
     let userId = message["from_user"]["id"];
-    let newName = message["content"];
+    let newName = he.escape(message["content"]);
     let toChange = document.getElementsByClassName(userId);
     for (let i = 0; i < toChange.length; i++) {
         toChange[i].innerHTML = newName;
     }
     if (userId === myUserID) {
-        myName = he.unescape(newName);
-        document.getElementById("myname").value = myName;
-        document.getElementById("myname").size = myName.length;
+        myName = newName;
+        resetNameChangeInput();
     } else {
         userNames[userId] = newName;
     }
+};
+
+const resetNameChangeInput = () => {
+    document.getElementById("myname").value = he.unescape(myName);
+    document.getElementById("myname").size = he.unescape(myName).length;
 };
 
 const newNameIsOk = newName => {
@@ -399,11 +403,10 @@ window.onload = () => {
 
     document.getElementById("myname").onblur =
         document.getElementById("namechange").onsubmit = () => {
-            let newName = he.escape(document.getElementById("myname").value);
+            let newName = document.getElementById("myname").value;
             if (!newNameIsOk(newName)) {
                 input.focus();
-                document.getElementById("myname").value = myName;
-                document.getElementById("myname").size = myName.length;
+                resetNameChangeInput();
                 return false;
             }
             let message = newMessage(TmpchatEvent.NameChange, newName);
