@@ -217,8 +217,12 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(*http.Request) bool {
-			isValidUser := tmpchat.Turnstile.Verify(userID)
-			originURL, err := url.Parse(r.Header["Origin"][0])
+			isValidUser := tmpchat.Turnstile.Admit(userID)
+			var origin string
+			if vals, ok := r.Header["Origin"]; ok {
+				origin = vals[0]
+			}
+			originURL, err := url.Parse(origin)
 			if err != nil {
 				return false
 			}
@@ -274,7 +278,7 @@ func (t *Turnstile) Register(userID string) bool {
 	return true
 }
 
-func (t *Turnstile) Verify(userID string) bool {
+func (t *Turnstile) Admit(userID string) bool {
 	t.RLock()
 	_, ok := t.m[userID]
 	t.RUnlock()
