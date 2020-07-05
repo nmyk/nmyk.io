@@ -208,16 +208,19 @@ func (c *Channel) Broadcast(msg Message) {
 
 func signalingHandler(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
-	var userID, channelName string
-	if vals, ok := params["userID"]; ok {
-		userID = vals[0]
-	}
+	var channelName, userID string
 	if vals, ok := params["channelName"]; ok {
 		channelName = vals[0]
 	}
+	if vals, ok := params["userID"]; ok {
+		userID = vals[0]
+	}
+	if ok := tmpchat.Turnstile.Admit(userID); !ok {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(*http.Request) bool {
-			isValidUser := tmpchat.Turnstile.Admit(userID)
 			var origin string
 			if vals, ok := r.Header["Origin"]; ok {
 				origin = vals[0]
@@ -226,8 +229,7 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				return false
 			}
-			isValidOrigin := originURL.String() == os.Getenv("TMPCHAT_URL")
-			return isValidUser && isValidOrigin
+			return originURL.String() == os.Getenv("TMPCHAT_URL")
 		},
 	}
 	conn, err := upgrader.Upgrade(w, r, nil)
