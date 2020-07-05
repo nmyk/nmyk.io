@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"html/template"
 	"log"
 	"net/http"
@@ -19,10 +20,12 @@ import (
 
 type Chat struct {
 	sync.RWMutex
+	Registry *Registry
 	Channels map[string]*Channel
 }
 
 var tmpchat = &Chat{
+	Registry: &Registry{m: make(map[string]struct{})},
 	Channels: make(map[string]*Channel),
 }
 
@@ -53,25 +56,25 @@ type Channel struct {
 
 type Members struct {
 	sync.RWMutex
-	Map map[string]*websocket.Conn
+	m map[string]*websocket.Conn
 }
 
 func (c *Members) Get(id string) (*websocket.Conn, bool) {
 	c.RLock()
-	member, ok := c.Map[id]
+	member, ok := c.m[id]
 	c.RUnlock()
 	return member, ok
 }
 
 func (c *Members) Set(id string, member *websocket.Conn) {
 	c.Lock()
-	c.Map[id] = member
+	c.m[id] = member
 	c.Unlock()
 }
 
 func (c *Members) Delete(id string) {
 	c.Lock()
-	delete(c.Map, id)
+	delete(c.m, id)
 	c.Unlock()
 }
 
@@ -89,7 +92,7 @@ func (c *Members) Count() int {
 func (c *Members) Range(f func(*websocket.Conn) bool) {
 	c.RLock()
 	defer c.RUnlock()
-	for _, member := range c.Map {
+	for _, member := range c.m {
 		if next := f(member); !next {
 			return
 		}
@@ -99,7 +102,7 @@ func (c *Members) Range(f func(*websocket.Conn) bool) {
 func Materialize(channelName string) *Channel {
 	c := &Channel{
 		Name:     channelName,
-		Members:  &Members{Map: make(map[string]*websocket.Conn)},
+		Members:  &Members{m: make(map[string]*websocket.Conn)},
 		Messages: make(chan Message),
 	}
 	if existing, ok := tmpchat.Get(channelName); !ok {
@@ -204,13 +207,17 @@ func (c *Channel) Broadcast(msg Message) {
 }
 
 func signalingHandler(w http.ResponseWriter, r *http.Request) {
+	userID := r.URL.Query()["userID"][0]
+	channelName := r.URL.Query()["channelName"][0]
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(*http.Request) bool {
+			isValidUser := tmpchat.Registry.Request(userID)
 			originURL, err := url.Parse(r.Header["Origin"][0])
 			if err != nil {
 				return false
 			}
-			return originURL.String() == os.Getenv("TMPCHAT_URL")
+			isValidOrigin := originURL.String() == os.Getenv("TMPCHAT_URL")
+			return isValidUser && isValidOrigin
 		},
 	}
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -218,8 +225,6 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 		log.Print("upgrade:", err)
 		return
 	}
-	userID := r.URL.Query()["userID"][0]
-	channelName := r.URL.Query()["channelName"][0]
 	Materialize(channelName).Members.Set(userID, conn)
 	for {
 		_, rawSignal, err := conn.ReadMessage()
@@ -245,8 +250,40 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type Registry struct {
+	sync.RWMutex
+	m map[string]struct{}
+}
+
+func (r *Registry) Submit(userID string) bool {
+	r.RLock()
+	_, ok := r.m[userID]
+	r.RUnlock()
+	if ok {
+		return false
+	}
+	r.Lock()
+	r.m[userID] = struct{}{}
+	r.Unlock()
+	return true
+}
+
+func (r *Registry) Request(userID string) bool {
+	r.RLock()
+	_, ok := r.m[userID]
+	r.RUnlock()
+	if ok {
+		r.Lock()
+		delete(r.m, userID)
+		r.Unlock()
+		return true
+	}
+	return false
+}
+
 type tmpchatPageData struct {
 	ChannelName  string
+	UserID       string
 	AppURL       string
 	SignalingURL string
 }
@@ -262,8 +299,14 @@ func tmpchatHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		tmpl = getTemplate("tmpchat-channel", fm)
 	}
+	userID := uuid.New().String()
+	if ok := tmpchat.Registry.Submit(userID); !ok {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 	d := tmpchatPageData{
 		channelName,
+		userID,
 		os.Getenv("TMPCHAT_URL"),
 		os.Getenv("TMPCHAT_SIGNALING_URL"),
 	}
