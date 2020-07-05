@@ -49,7 +49,6 @@ func (ch *Chat) Delete(channelName string) {
 }
 
 type Channel struct {
-	Name     string
 	Members  *Members
 	Messages chan Message
 }
@@ -101,7 +100,6 @@ func (c *Members) Range(f func(*websocket.Conn) bool) {
 
 func Materialize(channelName string) *Channel {
 	c := &Channel{
-		Name:     channelName,
 		Members:  &Members{m: make(map[string]*websocket.Conn)},
 		Messages: make(chan Message),
 	}
@@ -111,6 +109,17 @@ func Materialize(channelName string) *Channel {
 		return c
 	} else {
 		return existing
+	}
+}
+
+func Collect(channelName string, userID string) {
+	if ch, ok := tmpchat.Get(channelName); ok {
+		ch.Broadcast(Message{Type: Exit, FromUser: User{ID: userID}})
+		ch.Members.Delete(userID)
+		if ch.Members.Count() == 0 {
+			close(ch.Messages)
+			tmpchat.Delete(channelName)
+		}
 	}
 }
 
@@ -148,12 +157,6 @@ func (c *Channel) Run() {
 			}
 		}
 	}
-}
-
-func (c *Channel) Close() {
-	close(c.Messages)
-	tmpchat.Delete(c.Name)
-	log.Println(fmt.Sprintf("cleaned up empty channel %s", c.Name))
 }
 
 type Message struct {
@@ -237,17 +240,11 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	Materialize(channelName).Members.Set(userID, conn)
+	defer Collect(channelName, userID)
 	for {
 		_, rawSignal, err := conn.ReadMessage()
 		if err != nil {
 			log.Println("read:", err)
-			if ch, ok := tmpchat.Get(channelName); ok {
-				ch.Broadcast(Message{Type: Exit, FromUser: User{ID: userID}})
-				ch.Members.Delete(userID)
-				if ch.Members.Count() == 0 {
-					ch.Close()
-				}
-			}
 			break
 		}
 		message := Message{}
