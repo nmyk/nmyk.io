@@ -211,7 +211,7 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 	channelName := r.URL.Query()["channelName"][0]
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(*http.Request) bool {
-			isValidUser := tmpchat.Turnstile.Exit(userID)
+			isValidUser := tmpchat.Turnstile.Verify(userID)
 			originURL, err := url.Parse(r.Header["Origin"][0])
 			if err != nil {
 				return false
@@ -255,7 +255,7 @@ type Turnstile struct {
 	m map[string]struct{}
 }
 
-func (t *Turnstile) Enter(userID string) bool {
+func (t *Turnstile) Register(userID string) bool {
 	t.RLock()
 	_, ok := t.m[userID]
 	t.RUnlock()
@@ -268,7 +268,7 @@ func (t *Turnstile) Enter(userID string) bool {
 	return true
 }
 
-func (t *Turnstile) Exit(userID string) bool {
+func (t *Turnstile) Verify(userID string) bool {
 	t.RLock()
 	_, ok := t.m[userID]
 	t.RUnlock()
@@ -300,7 +300,7 @@ func tmpchatHandler(w http.ResponseWriter, r *http.Request) {
 		tmpl = getTemplate("tmpchat-channel", fm)
 	}
 	userID := uuid.New().String()
-	if ok := tmpchat.Turnstile.Enter(userID); !ok {
+	if ok := tmpchat.Turnstile.Register(userID); !ok {
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}

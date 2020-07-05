@@ -333,6 +333,9 @@ ws.onmessage = event => {
 
 const handleEntrance = message => {
     let member = message["content"];
+    if (rtcPeerConns[member["id"]]) {
+        return;
+    }
     if (member["id"] !== myUserId) {
         rtcPeerConns.add(member, true);
         addNewDataChannel(member);
