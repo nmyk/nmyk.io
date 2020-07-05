@@ -68,14 +68,14 @@ const shouldStackMsg = (message, lastMsgElement) => {
 const announceEntrance = user => {
     let name = document.createElement("span");
     name.className = user["id"];
-    name.textContent = user["name"];
+    name.innerHTML = user["name"];
     announce(name.outerHTML + " joined");
 };
 
 const announceExit = user => {
     let name = document.createElement("span");
     name.className = user["id"];
-    name.textContent = userNames[user["id"]];
+    name.innerHTML = userNames[user["id"]];
     announce(name.outerHTML + " left");
 };
 
