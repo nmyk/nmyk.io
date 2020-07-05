@@ -23,7 +23,7 @@ let myName = chooseOne(EMOJI);
 
 const newMessage = (type, content) => {
     return {
-        "from_user": {"id": myUserId, "name": myName},
+        "from_user": {"id": myUserID, "name": myName},
         "type": type,
         "content": content
     };
@@ -113,7 +113,7 @@ const doNameChange = message => {
     for (let i = 0; i < toChange.length; i++) {
         toChange[i].innerHTML = newName;
     }
-    if (userId === myUserId) {
+    if (userId === myUserID) {
         myName = he.unescape(newName);
         document.getElementById("myname").value = myName;
         document.getElementById("myname").size = myName.length;
@@ -172,7 +172,7 @@ const parseAndValidate = (event, channel) => {
     let isValid = (
         message["type"] &&
         userID &&
-        userID !== myUserId &&
+        userID !== myUserID &&
         rtcPeerConns.hasOwnProperty(userID) &&
         rtcPeerConns[userID]["dataChannel"] === channel
     );
@@ -201,7 +201,7 @@ const write = message => {
         let currentText = lastMsgElement.getElementsByClassName("chatmessage")[0];
         currentText.textContent += "\n" + message["content"];
     } else {
-        let isFromMe = message["from_user"]["id"] === myUserId;
+        let isFromMe = message["from_user"]["id"] === myUserID;
         let name = nameTag(message, isFromMe);
         let msg = document.createElement("div");
         msg.className = isFromMe ? "mymessage" : "theirmessage";
@@ -224,7 +224,7 @@ const info = txt => {
 const rtcPeerConns = {};
 const userNames = {};
 
-let ws = new WebSocket(`${signalingURL}/?userID=${myUserId}&channelName=${unescape(window.location.pathname.substr(1))}`);
+let ws = new WebSocket(`${signalingURL}/?userID=${myUserID}&channelName=${unescape(window.location.pathname.substr(1))}`);
 
 ws.sendMessage = message => ws.send(JSON.stringify(message));
 
@@ -335,7 +335,7 @@ const handleEntrance = message => {
     if (rtcPeerConns[member["id"]]) {
         return;
     }
-    if (member["id"] !== myUserId) {
+    if (member["id"] !== myUserID) {
         rtcPeerConns.add(member, true);
         addNewDataChannel(member);
         appendToRoll(member);
@@ -345,7 +345,7 @@ const handleEntrance = message => {
 
 const handleExit = message => {
     let user = message["from_user"];
-    if (user["id"] !== myUserId) {
+    if (user["id"] !== myUserID) {
         let element = document.getElementById("namechange").getElementsByClassName(user["id"])[0];
         element.parentElement.outerHTML = "";
         announceExit(user);
