@@ -58,28 +58,28 @@ type Members struct {
 	m map[string]*websocket.Conn
 }
 
-func (c *Members) Get(id string) (*websocket.Conn, bool) {
-	c.RLock()
-	member, ok := c.m[id]
-	c.RUnlock()
+func (m *Members) Get(id string) (*websocket.Conn, bool) {
+	m.RLock()
+	member, ok := m.m[id]
+	m.RUnlock()
 	return member, ok
 }
 
-func (c *Members) Set(id string, member *websocket.Conn) {
-	c.Lock()
-	c.m[id] = member
-	c.Unlock()
+func (m *Members) Set(id string, member *websocket.Conn) {
+	m.Lock()
+	m.m[id] = member
+	m.Unlock()
 }
 
-func (c *Members) Delete(id string) {
-	c.Lock()
-	delete(c.m, id)
-	c.Unlock()
+func (m *Members) Delete(id string) {
+	m.Lock()
+	delete(m.m, id)
+	m.Unlock()
 }
 
-func (c *Members) Count() int {
+func (m *Members) Count() int {
 	var n int
-	c.Range(func(member *websocket.Conn) bool {
+	m.Range(func(member *websocket.Conn) bool {
 		if member != nil {
 			n++
 		}
@@ -88,10 +88,10 @@ func (c *Members) Count() int {
 	return n
 }
 
-func (c *Members) Range(f func(*websocket.Conn) bool) {
-	c.RLock()
-	defer c.RUnlock()
-	for _, member := range c.m {
+func (m *Members) Range(f func(*websocket.Conn) bool) {
+	m.RLock()
+	defer m.RUnlock()
+	for _, member := range m.m {
 		if next := f(member); !next {
 			return
 		}
