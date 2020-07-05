@@ -114,7 +114,7 @@ const doNameChange = message => {
         toChange[i].innerHTML = newName;
     }
     if (userId === myUserID) {
-        myName = he.unescape(newName);
+        myName = newName;
         document.getElementById("myname").value = myName;
         document.getElementById("myname").size = myName.length;
     } else {
@@ -230,6 +230,11 @@ ws.sendMessage = message => ws.send(JSON.stringify(message));
 
 ws.onopen = () => {
     ws.sendMessage(newMessage(SignalingEvent.TURNCredRequest, null));
+};
+
+ws.onerror = event => {
+    info(event);
+    ws.close();
 };
 
 const addNewRTCPeerConn = (turnCreds, member, isLocal) => {
@@ -376,11 +381,6 @@ const handleICECandidate = message => {
 const handleTURNCredResponse = message => {
     rtcPeerConns.add = (member, isLocal) =>
         addNewRTCPeerConn(message["content"], member, isLocal)
-};
-
-ws.onerror = event => {
-    info(event);
-    ws.close();
 };
 
 window.onload = () => {
