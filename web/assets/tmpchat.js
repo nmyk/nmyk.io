@@ -114,7 +114,7 @@ const doNameChange = message => {
         toChange[i].innerHTML = newName;
     }
     if (userId === myUserID) {
-        myName = newName;
+        myName = he.unescape(newName);
         document.getElementById("myname").value = myName;
         document.getElementById("myname").size = myName.length;
     } else {
