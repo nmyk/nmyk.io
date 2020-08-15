@@ -141,11 +141,12 @@ func (c *Channel) Run() {
 	for msg := range c.Messages {
 		switch msg.Type {
 		case TURNCredRequest:
-			msg.Reply(
+			if member, ok := c.Members.Get(msg.From); ok {
 				Message{
 					Type:    TURNCredResponse,
 					Content: GetTURNCreds(msg.From),
-				})
+				}.SendTo(member)
+			}
 			c.Broadcast(
 				Message{
 					Type: Entrance,
@@ -166,11 +167,10 @@ func (c *Channel) Run() {
 }
 
 type Message struct {
-	replyAddr *websocket.Conn
-	To        string      `json:"to,omitempty"`
-	From      string      `json:"from,omitempty"`
-	Type      EventType   `json:"type"`
-	Content   interface{} `json:"content"`
+	To      string      `json:"to,omitempty"`
+	From    string      `json:"from,omitempty"`
+	Type    EventType   `json:"type"`
+	Content interface{} `json:"content"`
 }
 
 type EventType int
@@ -184,13 +184,6 @@ const (
 	TURNCredRequest
 	TURNCredResponse
 )
-
-func (m Message) Reply(msg Message) {
-	response, _ := json.Marshal(msg)
-	if err := m.replyAddr.WriteMessage(1, response); err != nil {
-		log.Println("write:", err)
-	}
-}
 
 func (m Message) SendTo(member *websocket.Conn) {
 	message, _ := json.Marshal(m)
@@ -252,7 +245,6 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 		if err := json.Unmarshal(rawSignal, &message); err != nil {
 			continue
 		}
-		message.replyAddr = conn
 		if ch, ok := tmpchat.Get(channelName); ok {
 			ch.Messages <- message
 		}
