@@ -114,18 +114,13 @@ func Materialize(channelName string) *Channel {
 
 func Collect(channelName string, userID string) {
 	if ch, ok := tmpchat.Get(channelName); ok {
-		ch.Broadcast(Message{Type: Exit, FromUser: User{ID: userID}})
+		ch.Broadcast(Message{Type: Exit, From: userID})
 		ch.Members.Delete(userID)
 		if ch.Members.Count() == 0 {
 			close(ch.Messages)
 			tmpchat.Delete(channelName)
 		}
 	}
-}
-
-type TURNCreds struct {
-	Username string `json:"username"`
-	Password string `json:"credential"`
 }
 
 func GetTURNCreds(userID string) TURNCreds {
@@ -137,6 +132,11 @@ func GetTURNCreds(userID string) TURNCreds {
 	return TURNCreds{turnUserName, password}
 }
 
+type TURNCreds struct {
+	Username string `json:"username"`
+	Password string `json:"credential"`
+}
+
 func (c *Channel) Run() {
 	for msg := range c.Messages {
 		switch msg.Type {
@@ -144,15 +144,21 @@ func (c *Channel) Run() {
 			msg.Reply(
 				Message{
 					Type:    TURNCredResponse,
-					Content: GetTURNCreds(msg.FromUser.ID),
+					Content: GetTURNCreds(msg.From),
 				})
 			c.Broadcast(
 				Message{
-					Type:    Entrance,
-					Content: msg.FromUser,
+					Type: Entrance,
+					Content: struct {
+						ID   string `json:"id"`
+						Name string `json:"name"`
+					}{
+						msg.From,
+						msg.Content.(string),
+					},
 				})
 		case RTCOffer, RTCAnswer, RTCICECandidate:
-			if member, ok := c.Members.Get(msg.ToUserID); ok {
+			if member, ok := c.Members.Get(msg.To); ok {
 				msg.SendTo(member)
 			}
 		}
@@ -160,16 +166,11 @@ func (c *Channel) Run() {
 }
 
 type Message struct {
-	fromConn *websocket.Conn
-	FromUser User        `json:"from_user,omitempty"`
-	ToUserID string      `json:"to_user_id,omitempty"`
-	Type     EventType   `json:"type"`
-	Content  interface{} `json:"content"`
-}
-
-type User struct {
-	ID   string `json:"id"`
-	Name string `json:"name,omitempty"`
+	replyAddr *websocket.Conn
+	To        string      `json:"to,omitempty"`
+	From      string      `json:"from,omitempty"`
+	Type      EventType   `json:"type"`
+	Content   interface{} `json:"content"`
 }
 
 type EventType int
@@ -186,7 +187,7 @@ const (
 
 func (m Message) Reply(msg Message) {
 	response, _ := json.Marshal(msg)
-	if err := m.fromConn.WriteMessage(1, response); err != nil {
+	if err := m.replyAddr.WriteMessage(1, response); err != nil {
 		log.Println("write:", err)
 	}
 }
@@ -251,7 +252,7 @@ func signalingHandler(w http.ResponseWriter, r *http.Request) {
 		if err := json.Unmarshal(rawSignal, &message); err != nil {
 			continue
 		}
-		message.fromConn = conn
+		message.replyAddr = conn
 		if ch, ok := tmpchat.Get(channelName); ok {
 			ch.Messages <- message
 		}

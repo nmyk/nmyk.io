@@ -23,7 +23,7 @@ let myName = chooseOne(EMOJI);
 
 const newMessage = (type, content) => {
     return {
-        "from_user": {"id": myUserID, "name": myName},
+        "from": myUserID,
         "type": type,
         "content": content
     };
@@ -41,8 +41,8 @@ const broadcast = message => {
 const nameTag = (message, isFromMe) => {
     let tag = document.createElement("div");
     let name = document.createElement("span");
-    name.className = message["from_user"]["id"];
-    name.innerHTML = message["from_user"]["name"];
+    name.className = message["from"];
+    name.innerHTML = isFromMe ? myName : userNames[message["from"]];
     tag.appendChild(name);
     if (isFromMe) {
         tag.className = "myname";
@@ -62,7 +62,7 @@ const shouldStackMsg = (message, lastMsgElement) => {
         return false;
     }
     let lastMsgUserId = lastMsgElement.firstElementChild.firstElementChild.className;
-    return message["from_user"]["id"] === lastMsgUserId;
+    return message["from"] === lastMsgUserId;
 };
 
 const announceEntrance = user => {
@@ -107,7 +107,7 @@ const doClear = () => {
 };
 
 const doNameChange = message => {
-    let userId = message["from_user"]["id"];
+    let userId = message["from"];
     let newName = he.escape(message["content"]);
     let toChange = document.getElementsByClassName(userId);
     for (let i = 0; i < toChange.length; i++) {
@@ -168,11 +168,7 @@ const getNewName = () => {
 
 const parseAndValidate = (event, dataChannel) => {
     let message = JSON.parse(event.data), nothing = {};
-    let userID = (
-        message &&
-        message["from_user"] &&
-        message["from_user"]["id"]
-    );
+    let userID = message && message["from"];
     let isValid = (
         message["type"] &&
         userID &&
@@ -205,7 +201,7 @@ const write = message => {
         let currentText = lastMsgElement.getElementsByClassName("chatmessage")[0];
         currentText.textContent += "\n" + message["content"];
     } else {
-        let isFromMe = message["from_user"]["id"] === myUserID;
+        let isFromMe = message["from"] === myUserID;
         let name = nameTag(message, isFromMe);
         let msg = document.createElement("div");
         msg.className = isFromMe ? "mymessage" : "theirmessage";
@@ -228,12 +224,16 @@ const info = txt => {
 const rtcPeerConns = {};
 const userNames = {};
 
+const getMember = id => {
+    return {"id": id, "name": userNames[id]}
+};
+
 let ws = new WebSocket(`${signalingURL}/?userID=${myUserID}&channelName=${unescape(window.location.pathname.substr(1))}`);
 
 ws.sendMessage = message => ws.send(JSON.stringify(message));
 
 ws.onopen = () => {
-    ws.sendMessage(newMessage(SignalingEvent.TURNCredRequest, null));
+    ws.sendMessage(newMessage(SignalingEvent.TURNCredRequest, myName));
 };
 
 ws.onerror = event => {
@@ -256,7 +256,7 @@ const addNewRTCPeerConn = (turnCreds, member, isLocal) => {
         if (event.candidate !== null) {
             let desc = btoa(JSON.stringify(event.candidate));
             let msg = newMessage(SignalingEvent.RTCICECandidate, desc);
-            msg["to_user_id"] = member["id"];
+            msg["to"] = member["id"];
             ws.sendMessage(msg);
         }
     };
@@ -265,8 +265,8 @@ const addNewRTCPeerConn = (turnCreds, member, isLocal) => {
         .then(() => {
             if (isLocal) {
                 let desc = btoa(JSON.stringify(pc.localDescription));
-                let msg = newMessage(SignalingEvent.RTCOffer, desc);
-                msg["to_user_id"] = member["id"];
+                let msg = newMessage(SignalingEvent.RTCOffer, {"name": myName, "desc": desc});
+                msg["to"] = member["id"];
                 ws.sendMessage(msg);
             }
         })
@@ -289,16 +289,17 @@ const addNewRTCPeerConn = (turnCreds, member, isLocal) => {
 };
 
 const answerRTCOffer = message => {
-    let offerDesc = JSON.parse(atob(message["content"]));
-    rtcPeerConns.add(message["from_user"], false);
-    let peerConn = rtcPeerConns[message["from_user"]["id"]]["conn"];
+    let offerDesc = JSON.parse(atob(message["content"]["desc"]));
+    let member = getMember(message["from"]);
+    rtcPeerConns.add(member, false);
+    let peerConn = rtcPeerConns[message["from"]]["conn"];
     peerConn.setRemoteDescription(new RTCSessionDescription(offerDesc))
         .then(() => peerConn.createAnswer())
         .then(answer => peerConn.setLocalDescription(answer))
         .then(() => {
             let desc = btoa(JSON.stringify(peerConn.localDescription));
             let response = newMessage(SignalingEvent.RTCAnswer, desc);
-            response["to_user_id"] = message["from_user"]["id"];
+            response["to"] = message["from"];
             ws.sendMessage(response);
         })
         .catch(info);
@@ -353,31 +354,32 @@ const handleEntrance = message => {
 };
 
 const handleExit = message => {
-    let user = message["from_user"];
-    if (user["id"] !== myUserID) {
-        let element = document.getElementById("namechange").getElementsByClassName(user["id"])[0];
+    let member = getMember(message["from"]);
+    if (member["id"] !== myUserID) {
+        let element = document.getElementById("namechange").getElementsByClassName(member["id"])[0];
         element.parentElement.outerHTML = "";
-        announceExit(user);
-        delete userNames[user["id"]];
-        delete rtcPeerConns[user["id"]];
+        announceExit(member);
+        delete userNames[member["id"]];
+        delete rtcPeerConns[member["id"]];
     }
 };
 
 const handleRTCOffer = message => {
-    appendToRoll(message["from_user"]);
+    userNames[message["from"]] = message["content"]["name"];
+    appendToRoll(getMember(message["from"]));
     answerRTCOffer(message);
 };
 
 const handleRTCAnswer = message => {
     let answerDesc = JSON.parse(atob(message["content"]));
-    rtcPeerConns[message["from_user"]["id"]]["conn"]
+    rtcPeerConns[message["from"]]["conn"]
         .setRemoteDescription(new RTCSessionDescription(answerDesc))
         .catch(info);
 };
 
 const handleICECandidate = message => {
     let candidate = JSON.parse(atob(message["content"]));
-    rtcPeerConns[message["from_user"]["id"]]["conn"]
+    rtcPeerConns[message["from"]]["conn"]
         .addIceCandidate(candidate)
         .catch(info);
 };
